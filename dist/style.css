@@ -83,33 +83,31 @@
 .progress-header {
   background-color: var(--bg);
   padding: 8px;
-  border-bottom: 1px solid var(--border-dark);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .progress-title {
-  font-weight: bold;
+  font-weight: normal; /* Not bold */
   margin: 0;
-  color: var(--accent);
+  color: var(--text); /* White/light text instead of gold */
 }
 
 .progress-body {
-  padding: 15px;
+  padding: 5px 15px 5px 15px; /* Reduced top padding for less space between title and content */
   background-color: var(--bg);
+}
+
+.progress-content {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Smaller gap between progress bar and button */
+  padding: 8px 0; /* Reduced padding for less vertical space */
 }
 
 .progress-message {
-  color: var(--text);
-  margin-bottom: 15px;
+  color: var(--text-3); /* Less bright white color */
+  margin-bottom: 8px; /* Reduced space between message and progress bar */
   margin-top: 0;
-}
-
-.progress-footer {
-  padding: 10px;
-  background-color: var(--bg);
-  border-top: 1px solid var(--border-dark);
-  display: flex;
-  justify-content: flex-end;
 }

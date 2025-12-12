@@ -575,19 +575,25 @@ function showProgressDialog(message, cancelText, remoteName, operationType) {
   modal.id = 'progress-modal';
   modal.className = 'progress-modal';
 
+  // Determine the appropriate message based on operation type
+  let operationMessage = message;
+  if (operationType === 'test') {
+    operationMessage = `Establishing network connection to ${remoteName}...`;
+  }
+
   modal.innerHTML = `
     <div class="progress-modal-content">
       <div class="progress-header">
-        <span class="progress-title">${operationType === 'test' ? 'Testing Connection' : operationType === 'mount' ? 'Mounting' : 'Unmounting'}</span>
+        <span class="progress-title">Loading...</span>
       </div>
       <div class="progress-body">
-        <div class="progress-message">${message}</div>
-        <div class="cs-progress-bar">
-          <div class="bars" style="width: 1%"></div>
+        <div class="progress-message">${operationMessage}</div>
+        <div class="progress-content">
+          <div class="cs-progress-bar">
+            <div class="bars" style="width: 1%"></div>
+          </div>
+          <button class="cs-btn progress-cancel-btn">${cancelText}</button>
         </div>
-      </div>
-      <div class="progress-footer">
-        <button class="cs-btn progress-cancel-btn">${cancelText}</button>
       </div>
     </div>
   `;
