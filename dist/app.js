@@ -132,7 +132,7 @@ async function loadRemotes() {
     const configPathFinal = configPath || null;
     const remotes = await invoke('get_remotes', { configPathOpt: configPathFinal });
 
-    renderRemotesTable(remotes);
+    await renderRemotesTable(remotes);
     const message = `Loaded ${remotes.length} remotes`;
     defaultStatusMessage = message; // Update the default message
     showStatus(message, 'success', false); // Don't auto-reset the loaded message
@@ -158,7 +158,7 @@ async function loadRemotes() {
 }
 
 // Function to render remotes in the table
-function renderRemotesTable(remotes) {
+async function renderRemotesTable(remotes) {
   if (!remoteTableBody) {
     console.error("remoteTableBody element not found");
     return;
@@ -169,20 +169,38 @@ function renderRemotesTable(remotes) {
   // Update the header to show the count
   updateRemoteHeader(remotes?.length || 0);
 
+  // Update the "No remotes" message to account for the new column
   if (!remotes || remotes.length === 0) {
     const row = document.createElement('tr');
-    row.innerHTML = '<td colspan="5" style="text-align: center;">No remotes configured. Please configure rclone remotes in ~/.config/rclone/rclone.conf</td>';
+    row.innerHTML = '<td colspan="6" style="text-align: center; padding: 0px;">No remotes configured. Please configure rclone remotes in ~/.config/rclone/rclone.conf</td>';
     remoteTableBody.appendChild(row);
     return;
   }
 
+  // Get available plugins to check secure status
+  const plugins = await invoke('get_available_plugins');
+
+  // Process remotes after getting plugins
   remotes.forEach(remote => {
     const row = document.createElement('tr');
     if (remote.mounted === 'Yes') {
       row.classList.add('mounted');
     }
 
+    // Check if this remote type is secure based on its plugin
+    // Look for exact match first (more reliable)
+    let remotePlugin = plugins.find(p => p.name.toLowerCase() === remote.type.toLowerCase());
+
+    // If no exact match, try matching in display name
+    if (!remotePlugin) {
+      remotePlugin = plugins.find(p => p.display_name.toLowerCase() === remote.type.toLowerCase());
+    }
+
+    const isSecure = remotePlugin && remotePlugin.secure === true;
+    const securityIcon = isSecure ? '<img src="shield.svg" alt="Secure" style="width: 14px; height: 14px; vertical-align: middle;">' : ''; // Shield for secure, empty for non-secure
+
     row.innerHTML = `
+      <td style="text-align: center; padding: 0px;">${securityIcon}</td>
       <td>${remote.name}</td>
       <td>${remote.type}</td>
       <td>${remote.mounted}</td>
@@ -196,10 +214,28 @@ function renderRemotesTable(remotes) {
         r.style.backgroundColor = '';
       });
 
-      // Highlight selected row
-      row.style.backgroundColor = 'var(--accent)';
+      // Highlight selected row with more golden color
+      row.style.backgroundColor = 'var(--secondary-accent)';
       selectedRemote = remote;
       updateButtonStates(remote);
+    });
+
+    // Add right-click context menu
+    row.addEventListener('contextmenu', (e) => {
+      e.preventDefault(); // Prevent default context menu
+
+      // Remove selection from other rows
+      document.querySelectorAll('#remote-table-body tr').forEach(r => {
+        r.style.backgroundColor = '';
+      });
+
+      // Highlight selected row with more golden color
+      row.style.backgroundColor = 'var(--secondary-accent)';
+      selectedRemote = remote;
+      updateButtonStates(remote);
+
+      // Create custom context menu
+      createContextMenu(e.clientX, e.clientY, remote);
     });
 
     remoteTableBody.appendChild(row);
@@ -212,9 +248,9 @@ function updateRemoteHeader(count) {
   if (headerRow) {
     // Get the existing header cells to preserve other columns
     const currentHeaders = headerRow.querySelectorAll('th');
-    if (currentHeaders.length >= 5) {
-      // Update only the first header (Remote) with the count
-      currentHeaders[0].textContent = `Remotes (${count})`;
+    if (currentHeaders.length >= 6) {
+      // Update the second header (Remote) with the count, not the first (Shield)
+      currentHeaders[1].textContent = `Remotes (${count})`;
     }
   }
 }
@@ -1094,6 +1130,365 @@ function showGeneralModal(title, message, buttonText = 'OK', resultType = 'info'
   });
 
   return modal;
+}
+
+// Create context menu for remote
+function createContextMenu(x, y, remote) {
+  // Remove any existing context menu
+  const existingMenu = document.getElementById('context-menu');
+  if (existingMenu) {
+    existingMenu.remove();
+  }
+
+  // Create context menu container
+  const menu = document.createElement('div');
+  menu.id = 'context-menu';
+  menu.className = 'progress-modal-content'; // Use same styling as other modals
+  menu.style.position = 'fixed';
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+  menu.style.zIndex = '10000';
+  menu.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+  menu.style.minWidth = '150px';
+  menu.style.maxWidth = '250px';
+
+  // Create menu content with proper CS16 styling
+  menu.innerHTML = `
+    <div class="progress-body" style="padding: 5px 0;">
+      <div class="context-menu-item cs-btn" id="menu-edit" style="display: block; text-align: left; padding: 8px 12px; margin: 0; width: 100%; text-decoration: none; background-color: var(--bg); border: 1px solid var(--border-light) var(--border-dark) var(--border-dark) var(--border-light); cursor: pointer; transition: background-color 0.15s ease;"
+           onmouseover="this.style.backgroundColor='var(--secondary-bg)'"
+           onmouseout="this.style.backgroundColor='var(--bg)'">
+        <span style="margin-right: 8px;">✏️</span>Edit
+      </div>
+      <div class="context-menu-item cs-btn" id="menu-delete" style="display: block; text-align: left; padding: 8px 12px; margin: 0; width: 100%; text-decoration: none; background-color: var(--bg); border: 1px solid var(--border-light) var(--border-dark) var(--border-dark) var(--border-light); cursor: pointer; transition: background-color 0.15s ease;"
+           onmouseover="this.style.backgroundColor='var(--secondary-bg)'"
+           onmouseout="this.style.backgroundColor='var(--bg)'">
+        <span style="margin-right: 8px;">🗑️</span>Delete
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(menu);
+
+  // Add event listeners to menu items
+  document.getElementById('menu-edit').addEventListener('click', () => {
+    handleEditRemote(remote);
+    menu.remove();
+  });
+
+  document.getElementById('menu-delete').addEventListener('click', () => {
+    handleDeleteRemote(remote);
+    menu.remove();
+  });
+
+  // Close menu when clicking elsewhere
+  const closeMenu = () => {
+    menu.remove();
+    document.removeEventListener('click', closeMenu);
+  };
+
+  // Add a small delay to allow the menu to be clicked before registering document clicks
+  setTimeout(() => {
+    document.addEventListener('click', closeMenu);
+  }, 100);
+}
+
+// Handle editing a remote
+async function handleEditRemote(remote) {
+  try {
+    // Get available plugins to find one that matches this remote type
+    const plugins = await invoke('get_available_plugins');
+
+    // Find a plugin that matches this remote type
+    // Look for exact match first (more reliable)
+    let plugin = plugins.find(p => p.name.toLowerCase() === remote.type.toLowerCase());
+
+    // If no exact match, try matching in display name - but with exact match, not partial
+    if (!plugin) {
+      plugin = plugins.find(p => p.display_name.toLowerCase() === remote.type.toLowerCase());
+    }
+
+    if (!plugin) {
+      showGeneralModal('Cannot Edit', `Cannot edit remote '${remote.name}'. No plugin found for type '${remote.type}'.`);
+      return;
+    }
+
+    // Get the current configuration for this remote
+    const configPath = localStorage.getItem('rcloneConfigPath') || null;
+    const remoteConfig = await invoke('get_remote_config', {
+      remoteName: remote.name,
+      configPathOpt: configPath
+    });
+
+    // Now we have the plugin and remote config, so call a new function to open the edit form
+    await openEditRemoteForm(remote, plugin, remoteConfig);
+  } catch (error) {
+    console.error('Error editing remote:', error);
+    if (error.message?.includes("not found in config")) {
+      showGeneralModal('Error', `Remote '${remote.name}' not found in the config file anymore.`);
+    } else {
+      showGeneralModal('Error', `Failed to edit remote: ${error.message || error}`);
+    }
+  }
+}
+
+// Function to open the remote editing form
+async function openEditRemoteForm(remote, plugin, remoteConfig) {
+  // Create modal HTML for editing remote
+  const modal = document.createElement('div');
+  modal.id = 'edit-remote-modal';
+  modal.className = 'progress-modal'; // Use same styling as other modals
+
+  // Build plugin options for dropdown
+  let pluginOptions = '';
+  const plugins = await invoke('get_available_plugins');
+  plugins.forEach(p => {
+    const selected = p.name === plugin.name ? 'selected' : '';
+    pluginOptions += `<option value="${p.name}" ${selected}>${p.display_name}</option>`;
+  });
+
+  // Create the HTML for the edit form
+  modal.innerHTML = `
+    <div class="progress-modal-content">
+      <div class="progress-header">
+        <span class="progress-title">Edit Remote: ${remote.name}</span>
+      </div>
+      <div class="progress-body">
+        <div style="margin: 10px 0;">
+          <label class="cs-input__label">Remote Name:</label>
+          <div style="margin-top: 4px;">
+            <input type="text" id="remote-name" class="cs-input" value="${remote.name}" readonly style="width: 100%; background-color: var(--secondary-bg); color: var(--text-3);">
+          </div>
+        </div>
+        <div style="margin: 10px 0;">
+          <label class="cs-input__label">Remote Type:</label>
+          <div style="margin-top: 4px;">
+            <select id="remote-type" class="cs-select" style="width: 100%;" disabled>
+              ${pluginOptions}
+            </select>
+          </div>
+        </div>
+        <div style="margin: 10px 0; height: 300px; overflow-y: auto; border: 1px solid var(--border-dark); padding: 10px; max-height: 300px;">
+          <div id="plugin-fields">
+            <!-- Plugin-specific fields will be loaded here with current values -->
+          </div>
+        </div>
+        <div class="progress-content" style="justify-content: flex-end; padding-top: 15px;">
+          <button class="cs-btn cancel-edit-btn">Cancel</button>
+          <button class="cs-btn save-edit-btn" style="margin-left: 5px;">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Fill in the plugin fields with current values
+  loadPluginFieldsForEdit(plugin, remoteConfig);
+
+  // Add event listeners for the buttons
+  modal.querySelector('.cancel-edit-btn').addEventListener('click', () => {
+    document.getElementById('edit-remote-modal').remove();
+  });
+
+  modal.querySelector('.save-edit-btn').addEventListener('click', async () => {
+    const newName = document.getElementById('remote-name').value.trim();
+    const newType = document.getElementById('remote-type').value;
+
+    // Build config object from field values
+    const config = { remote_name: newName }; // Include the name in the config
+
+    // Add values for each field in the plugin
+    const allFields = [...(plugin.basic_fields || plugin.fields || []), ...(plugin.advanced_fields || [])];
+    allFields.forEach(field => {
+      const element = document.getElementById(`field-${field.name}`);
+      if (element) {
+        // Handle checkboxes differently
+        if (field.field_type === 'checkbox') {
+          config[field.name] = element.checked ? 'true' : 'false';
+        } else {
+          // For other fields, use the current value
+          const value = element.value;
+          // For password fields, if it's empty, don't update it (keep existing encrypted value)
+          if (field.field_type === 'password' && value === '') {
+            // Don't update password if field is empty - keep existing encrypted value
+            if (remoteConfig[field.name]) {
+              config[field.name] = remoteConfig[field.name];
+            }
+          } else {
+            config[field.name] = value || field.default || '';
+          }
+        }
+      }
+    });
+
+    try {
+      // Get config path
+      const configPath = localStorage.getItem('rcloneConfigPath') || null;
+
+      // To edit, we first delete the existing remote and add the updated one
+      // This is the simplest way to handle renaming since INI files don't support renaming sections
+      const deleteResult = await invoke('delete_remote', {
+        remote_name: remote.name,
+        config_path_opt: configPath
+      });
+
+      if (!deleteResult.success) {
+        showGeneralModal('Error', `Failed to delete old remote during update: ${deleteResult.message}`);
+        return;
+      }
+
+      // Then add the updated remote with new values
+      const addResult = await invoke('add_remote_with_plugin', {
+        plugin_name: newType,
+        config: config,
+        config_path_opt: configPath
+      });
+
+      if (addResult.success) {
+        showGeneralModal('Success', `Remote '${remote.name}' updated successfully!`);
+        document.getElementById('edit-remote-modal').remove();
+        await loadRemotes(); // Refresh the list
+      } else {
+        showGeneralModal('Error', `Failed to update remote: ${addResult.message}`);
+      }
+    } catch (error) {
+      console.error('Error updating remote:', error);
+      showGeneralModal('Error', `Failed to update remote: ${error.message || error}`);
+    }
+  });
+}
+
+// Function to load plugin fields with current values for editing
+function loadPluginFieldsForEdit(plugin, remoteConfig) {
+  let fieldsHtml = '<div style="margin-top: 10px;"><h4 class="cs-input__label">Configuration Fields:</h4>';
+
+  // Display basic fields first
+  const basicFields = plugin.basic_fields || plugin.fields || [];
+  basicFields.forEach(field => {
+    const currentValue = remoteConfig[field.name] || field.default || '';
+    const placeholder = field.placeholder || '';
+
+    let fieldHtml = '';
+    switch (field.field_type) {
+      case 'password':
+        // For password fields, don't show the current value for security - just show a placeholder
+        fieldHtml = `<input type="password" id="field-${field.name}" class="cs-input" placeholder="${placeholder}" value="" style="width: 100%;">`;
+        break;
+      case 'checkbox':
+        const checked = currentValue === 'true' ? 'checked' : '';
+        fieldHtml = `<input type="checkbox" id="field-${field.name}" ${checked} style="margin-right: 5px;">`;
+        break;
+      case 'file':
+        fieldHtml = `<input type="file" id="field-${field.name}" class="cs-input" placeholder="${placeholder}" value="${currentValue}" style="width: 100%;">`;
+        break;
+      case 'number':
+        fieldHtml = `<input type="number" id="field-${field.name}" class="cs-input" placeholder="${placeholder}" value="${currentValue}" style="width: 100%;">`;
+        break;
+      default: // text, etc.
+        fieldHtml = `<input type="text" id="field-${field.name}" class="cs-input" placeholder="${placeholder}" value="${currentValue}" style="width: 100%;">`;
+        break;
+    }
+
+    fieldsHtml += `
+      <div style="margin: 8px 0;">
+        <label class="cs-input__label">${field.display_name}${field.required ? ' *' : ''}:</label>
+        ${fieldHtml}
+      </div>
+    `;
+  });
+
+  // Add advanced fields toggle if they exist
+  if (plugin.advanced_fields && plugin.advanced_fields.length > 0) {
+    fieldsHtml += `<div style="margin: 15px 0;"><button id="toggle-advanced-fields" class="cs-btn">Show Advanced Options</button></div>`;
+
+    // Initially hide advanced fields
+    fieldsHtml += `<div id="advanced-fields-container" style="display: none; margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--border-dark);">`;
+    fieldsHtml += `<h4 class="cs-input__label">Advanced Configuration:</h4>`;
+
+    plugin.advanced_fields.forEach(field => {
+      const currentValue = remoteConfig[field.name] || field.default || '';
+      const placeholder = field.placeholder || '';
+
+      let fieldHtml = '';
+      switch (field.field_type) {
+        case 'password':
+          // For password fields, don't show the current value for security
+          fieldHtml = `<input type="password" id="field-${field.name}" class="cs-input" placeholder="${placeholder}" value="" style="width: 100%;">`;
+          break;
+        case 'checkbox':
+          const checked = currentValue === 'true' ? 'checked' : '';
+          fieldHtml = `<input type="checkbox" id="field-${field.name}" ${checked} style="margin-right: 5px;">`;
+          break;
+        case 'file':
+          fieldHtml = `<input type="file" id="field-${field.name}" class="cs-input" placeholder="${placeholder}" value="${currentValue}" style="width: 100%;">`;
+          break;
+        case 'number':
+          fieldHtml = `<input type="number" id="field-${field.name}" class="cs-input" placeholder="${placeholder}" value="${currentValue}" style="width: 100%;">`;
+          break;
+        default: // text, etc.
+          fieldHtml = `<input type="text" id="field-${field.name}" class="cs-input" placeholder="${placeholder}" value="${currentValue}" style="width: 100%;">`;
+          break;
+      }
+
+      fieldsHtml += `
+        <div style="margin: 8px 0;">
+          <label class="cs-input__label">${field.display_name}${field.required ? ' *' : ''}:</label>
+          ${fieldHtml}
+        </div>
+      `;
+    });
+
+    fieldsHtml += `</div>`;
+
+    // Add JavaScript to toggle advanced fields
+    fieldsHtml += `<script>
+      document.getElementById('toggle-advanced-fields').addEventListener('click', function() {
+        const container = document.getElementById('advanced-fields-container');
+        if (container.style.display === 'none') {
+          container.style.display = 'block';
+          this.textContent = 'Hide Advanced Options';
+        } else {
+          container.style.display = 'none';
+          this.textContent = 'Show Advanced Options';
+        }
+      });
+    </script>`;
+  }
+
+  fieldsHtml += '</div>';
+  document.getElementById('plugin-fields').innerHTML = fieldsHtml;
+}
+
+// Handle deleting a remote
+async function handleDeleteRemote(remote) {
+  const confirmed = confirm(`Are you sure you want to delete remote '${remote.name}'?\n\nThis action cannot be undone.`);
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    // Get the config path from localStorage or use default (null)
+    const configPath = localStorage.getItem('rcloneConfigPath') || null;
+
+    // Call the backend to delete the remote
+    const result = await invoke('delete_remote', {
+      remoteName: remote.name,
+      config_path_opt: configPath
+    });
+
+    if (result.success) {
+      showGeneralModal('Success', result.message);
+      // Reload remotes to reflect the change
+      await loadRemotes();
+    } else {
+      showGeneralModal('Error', result.message);
+    }
+  } catch (error) {
+    console.error('Error deleting remote:', error);
+    showGeneralModal('Error', `Failed to delete remote: ${error.message || error}`);
+  }
 }
 
 // Export functions for Tauri commands to use if needed

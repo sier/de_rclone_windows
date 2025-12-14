@@ -44,7 +44,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  margin: 10px 0;
+  margin: 15px 0; /* Increased from 10px to 15px for more space */
   justify-content: space-between;
 }
 
@@ -54,34 +54,6 @@
   margin-bottom: 5px;
 }
 
-/* Custom table styling to match CS16 aesthetic */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background-color: var(--secondary-bg);
-  border: none; /* Remove table border */
-}
-
-th, td {
-  padding: 3px 5px; /* Much thinner padding */
-  text-align: left;
-  border: none; /* Remove all borders */
-}
-
-th {
-  background-color: var(--bg);
-  color: var(--text); /* White text instead of gold */
-  font-weight: normal; /* Normal weight, not bold */
-  border: none; /* Remove header borders */
-}
-
-td {
-  border: none; /* Remove cell borders */
-}
-
-tr.mounted {
-  background-color: var(--secondary-bg);
-}
 
 /* Button container styling - structural CSS only */
 .button-container {

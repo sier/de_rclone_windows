@@ -4,6 +4,7 @@
   "description": "SFTP remote type plugin",
   "version": "1.0.0",
   "author": "de_rclone",
+  "secure": true,
   "basic_fields": [
     {
       "name": "host",

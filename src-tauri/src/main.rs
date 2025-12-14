@@ -750,6 +750,157 @@ async fn open_file_dialog(app_handle: tauri::AppHandle) -> Result<Option<String>
     }
 }
 
+// Command to get remote config
+#[tauri::command]
+async fn get_remote_config(remote_name: String, config_path_opt: Option<String>) -> Result<std::collections::HashMap<String, String>, String> {
+    // Use the provided config path or default to ~/.config/rclone/rclone.conf
+    let config_path = if let Some(path_str) = config_path_opt {
+        expand_tilde_path(&path_str)?
+    } else {
+        // Use the default path
+        let home_dir = std::env::var("HOME").map_err(|e| format!("HOME not set: {}", e))?;
+        std::path::PathBuf::from(&home_dir).join(".config").join("rclone").join("rclone.conf")
+    };
+
+    if !config_path.exists() {
+        return Err(format!("rclone.conf not found at {:?}", config_path));
+    }
+
+    // Read the config file
+    let config_content = std::fs::read_to_string(&config_path)
+        .map_err(|e| format!("Failed to read config from {:?}: {}", config_path, e))?;
+
+    // Read all lines first to avoid iterator issues
+    let all_lines: Vec<&str> = config_content.lines().collect();
+    let mut result = std::collections::HashMap::new();
+    let mut in_target_section = false;
+    let mut i = 0;
+
+    while i < all_lines.len() {
+        let line = all_lines[i];
+        let line_trimmed = line.trim();
+
+        if line_trimmed.starts_with('[') && line_trimmed.ends_with(']') {
+            // This is a section header
+            let current_section = line_trimmed[1..line_trimmed.len()-1].to_string();
+            in_target_section = current_section == remote_name;
+
+            if in_target_section {
+                // We're now inside the target section, continue to read its options
+                i += 1;
+                continue;
+            } else if in_target_section {
+                // If we were in the target section and now moved to another section, we're done
+                break;
+            }
+        } else if in_target_section {
+            // Inside the target section, parse key=value pairs
+            if let Some(pos) = line_trimmed.find('=') {
+                let key = line_trimmed[..pos].trim();
+                let value = line_trimmed[pos + 1..].trim();
+
+                // Handle multiline values (like pem keys) if needed
+                if (key == "key_pem" || key == "pubkey") && value.starts_with("-----BEGIN ") {
+                    let mut full_value = value.to_string();
+                    i += 1;
+
+                    // Collect remaining lines until we find another section or end
+                    while i < all_lines.len() {
+                        let next_line = all_lines[i];
+                        if next_line.trim().starts_with('[') {
+                            // Hit next section, break out of multiline collection
+                            break;
+                        }
+
+                        if !next_line.trim().is_empty() {
+                            full_value.push('\n');
+                            full_value.push_str(next_line.trim());
+                        }
+                        i += 1;
+                    }
+
+                    // We've already incremented i, so continue the outer loop
+                    continue;
+                } else {
+                    result.insert(key.to_string(), value.to_string());
+                }
+            }
+        }
+
+        i += 1;
+    }
+
+    if !in_target_section && result.is_empty() {
+        return Err(format!("Remote '{}' not found in config", remote_name));
+    }
+
+    Ok(result)
+}
+
+// Command to delete a remote from the config
+#[tauri::command]
+async fn delete_remote(remote_name: String, config_path_opt: Option<String>) -> Result<CommandResult, String> {
+    // Use the provided config path or default to ~/.config/rclone/rclone.conf
+    let config_path = if let Some(path_str) = config_path_opt {
+        expand_tilde_path(&path_str)?
+    } else {
+        // Use the default path
+        let home_dir = std::env::var("HOME").map_err(|e| format!("HOME not set: {}", e))?;
+        std::path::PathBuf::from(&home_dir).join(".config").join("rclone").join("rclone.conf")
+    };
+
+    println!("Looking for config at path: {:?}", config_path); // Debug log
+
+    if !config_path.exists() {
+        return Err(format!("rclone.conf not found at {:?}", config_path));
+    }
+
+    // Read the config file
+    let config_content = std::fs::read_to_string(&config_path)
+        .map_err(|e| format!("Failed to read config from {:?}: {}", config_path, e))?;
+
+    // Parse the config to find the remote section to delete
+    let lines: Vec<&str> = config_content.split('\n').collect();
+    let mut new_config_lines = Vec::new();
+    let mut in_target_section = false;
+
+    for line in &lines {
+        let line_trimmed = line.trim();
+
+        if line_trimmed.starts_with('[') && line_trimmed.ends_with(']') {
+            // This is a section header
+            let current_section = line_trimmed[1..line_trimmed.len()-1].to_string();
+            in_target_section = current_section == remote_name;
+
+            if in_target_section {
+                // Skip this section header (don't add to new config)
+                continue;
+            } else {
+                // Add other section headers
+                new_config_lines.push(line.as_ref());
+            }
+        } else if in_target_section {
+            // Skip the content of the target section
+            continue;
+        } else {
+            // Add content from other sections
+            new_config_lines.push(line.as_ref());
+        }
+    }
+
+    // Join the lines back together
+    let new_config_content = new_config_lines.join("\n");
+
+    // Write the updated config back to the file
+    std::fs::write(&config_path, new_config_content)
+        .map_err(|e| format!("Failed to write updated config: {}", e))?;
+
+    Ok(CommandResult {
+        success: true,
+        message: format!("Successfully deleted remote '{}'", remote_name),
+    })
+}
+
 
 
 fn main() {
@@ -767,7 +918,9 @@ fn main() {
             is_rclone_installed,
             get_available_plugins,
             add_remote_with_plugin,
-            open_file_dialog
+            open_file_dialog,
+            delete_remote,
+            get_remote_config
         ])
         .setup(|app| {
             // Set window title - add error handling

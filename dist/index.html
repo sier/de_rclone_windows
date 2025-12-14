@@ -52,7 +52,45 @@
         .remote-table-container {
             flex: 1;
             overflow: auto;
+            background-color: var(--secondary-bg);
+            border: 1px solid #292c21; /* Dark outer border */
+            outline: 1px solid #8c9284; /* Light outer border to create 3D effect */
+            outline-offset: -1px; /* Inside the border */
         }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 0px 4px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--bg);
+            color: var(--text);
+            font-weight: normal;
+            border: 1px solid;
+            border-color: #8c9284 #292c21 #292c21 #8c9284; /* Classic CS16-style border */
+        }
+
+        /* Add classic CS16-style borders between header columns */
+        th:not(:last-child) {
+            border-right: 1px solid #292c21; /* Dark border */
+            box-shadow: 1px 0 0 #8c9284; /* Light border just to the right */
+        }
+
+        td {
+            padding-top: 0px;
+            padding-bottom: 0px;
+        }
+
+        tr.mounted {
+            background-color: var(--secondary-bg);
+        }
+
         
         
         .button-container {
@@ -83,6 +121,7 @@
                 <table id="remote-table">
                     <thead>
                         <tr>
+                            <th style="width: 25px; text-align: center; padding: 0px;"><img src="shield.svg" alt="Shield" style="width: 14px; height: 14px; vertical-align: middle;"></th>
                             <th>Remote</th>
                             <th>Type</th>
                             <th>Mounted</th>
