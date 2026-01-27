@@ -1,0 +1,67 @@
+{
+    "name": "smb",
+    "display_name": "SMB / CIFS",
+    "description": "SMB / CIFS (Windows Share, Samba)",
+    "version": "1.0.0",
+    "author": "de_rclone",
+    "secure": true,
+    "basic_fields": [
+        {
+            "name": "host",
+            "display_name": "Host",
+            "type": "text",
+            "required": true,
+            "placeholder": "hostname",
+            "tooltip": "SMB server hostname or IP address"
+        },
+        {
+            "name": "user",
+            "display_name": "Username",
+            "type": "text",
+            "required": true,
+            "placeholder": "username",
+            "tooltip": "SMB username"
+        },
+        {
+            "name": "port",
+            "display_name": "Port",
+            "type": "number",
+            "required": false,
+            "default": "445",
+            "placeholder": "445",
+            "tooltip": "SMB port number"
+        },
+        {
+            "name": "pass",
+            "display_name": "Password",
+            "type": "password",
+            "required": false,
+            "placeholder": "password",
+            "tooltip": "SMB password"
+        },
+        {
+            "name": "domain",
+            "display_name": "Domain",
+            "type": "text",
+            "required": false,
+            "default": "WORKGROUP",
+            "placeholder": "WORKGROUP",
+            "tooltip": "SMB domain or workgroup"
+        }
+    ],
+    "advanced_fields": [
+        {
+            "name": "hide_special_share",
+            "display_name": "Hide Special Shares",
+            "type": "checkbox",
+            "required": false,
+            "default": "true",
+            "tooltip": "Hide special administrative shares (C$, ADMIN$)"
+        }
+    ],
+    "validation": {
+        "host": {
+            "required": true
+        }
+    }
+}

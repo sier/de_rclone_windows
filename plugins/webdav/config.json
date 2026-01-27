@@ -1,0 +1,58 @@
+{
+    "name": "webdav",
+    "display_name": "WebDAV",
+    "description": "WebDAV (Nextcloud, Owncloud, etc)",
+    "version": "1.0.0",
+    "author": "de_rclone",
+    "secure": true,
+    "basic_fields": [
+        {
+            "name": "url",
+            "display_name": "URL",
+            "type": "text",
+            "required": true,
+            "placeholder": "https://example.com/remote.php/webdav/",
+            "tooltip": "URL of HTTP host to connect to"
+        },
+        {
+            "name": "vendor",
+            "display_name": "Vendor",
+            "type": "text",
+            "required": false,
+            "default": "nextcloud",
+            "placeholder": "nextcloud, owncloud, sharepoint, other",
+            "tooltip": "Name of the WebDAV site/service/software you are using"
+        },
+        {
+            "name": "user",
+            "display_name": "Username",
+            "type": "text",
+            "required": true,
+            "placeholder": "username",
+            "tooltip": "User name"
+        },
+        {
+            "name": "pass",
+            "display_name": "Password",
+            "type": "password",
+            "required": false,
+            "placeholder": "password",
+            "tooltip": "Password"
+        }
+    ],
+    "advanced_fields": [
+        {
+            "name": "bearer_token",
+            "display_name": "Bearer Token",
+            "type": "password",
+            "required": false,
+            "placeholder": "Bearer token instead of user/pass",
+            "tooltip": "Bearer token for OAuth2 authentication"
+        }
+    ],
+    "validation": {
+        "url": {
+            "required": true
+        }
+    }
+}

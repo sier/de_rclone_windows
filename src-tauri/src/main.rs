@@ -492,41 +492,43 @@ async fn is_rclone_installed() -> Result<bool, String> {
 // Get available plugins
 #[tauri::command]
 async fn get_available_plugins() -> Result<Vec<Plugin>, String> {
-    // Try multiple locations for plugins to support both dev and prod modes
-    let mut plugins_dir = std::path::PathBuf::new();
-
-    // First, try relative to executable (for AppImage/prod)
-    if let Ok(exe_dir) = std::env::current_exe() {
-        if let Some(parent) = exe_dir.parent() {
-            let exe_plugins_dir = parent.join("plugins");
-            if exe_plugins_dir.exists() {
-                plugins_dir = exe_plugins_dir;
-            }
+    // Try to find plugins directory in multiple possible locations
+    let mut potential_paths = Vec::new();
+    
+    // 1. Current directory (AppImage/binary location)
+    if let Ok(current_dir) = std::env::current_dir() {
+        potential_paths.push(current_dir.join("plugins"));
+    }
+    
+    // 2. Parent directory (Dev mode: src-tauri/../plugins)
+    if let Ok(current_dir) = std::env::current_dir() {
+        if let Some(parent) = current_dir.parent() {
+            potential_paths.push(parent.join("plugins"));
+        }
+    }
+    
+    // 3. Executable directory (often safer than current_dir)
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            potential_paths.push(exe_dir.join("plugins"));
         }
     }
 
-    // If not found relative to executable, try relative to current dir (for dev)
-    if !plugins_dir.exists() {
-        let current_dir_plugins = std::env::current_dir()
-            .map_err(|e| format!("Failed to get current directory: {}", e))?
-            .join("..")  // Go up to project root
-            .join("plugins");
-        if current_dir_plugins.exists() {
-            plugins_dir = current_dir_plugins;
-        } else {
-            // Try current directory directly
-            let current_plugins = std::env::current_dir()
-                .map_err(|e| format!("Failed to get current directory: {}", e))?
-                .join("plugins");
-            if current_plugins.exists() {
-                plugins_dir = current_plugins;
-            }
-        }
-    }
+    println!("Searching for plugins in: {:?}", potential_paths);
 
-    if !plugins_dir.exists() {
-        return Ok(Vec::new());
-    }
+    // Find the first valid plugins directory
+    let plugins_dir = potential_paths.into_iter()
+        .find(|p| p.exists() && p.is_dir());
+
+    let plugins_dir = match plugins_dir {
+        Some(path) => path,
+        None => {
+            println!("No plugins directory found");
+            return Ok(Vec::new());
+        }
+    };
+    
+    println!("Found plugins directory at: {:?}", plugins_dir);
 
     let mut plugins = Vec::new();
     for entry in std::fs::read_dir(&plugins_dir)
@@ -541,10 +543,13 @@ async fn get_available_plugins() -> Result<Vec<Plugin>, String> {
                 let config_content = std::fs::read_to_string(&config_path)
                     .map_err(|e| format!("Failed to read plugin config: {}", e))?;
 
-                let plugin: Plugin = serde_json::from_str(&config_content)
-                    .map_err(|e| format!("Failed to parse plugin config: {}", e))?;
-
-                plugins.push(plugin);
+                match serde_json::from_str::<Plugin>(&config_content) {
+                    Ok(plugin) => {
+                         println!("Loaded plugin: {}", plugin.name);
+                         plugins.push(plugin);
+                    },
+                    Err(e) => println!("Failed to parse plugin config at {:?}: {}", config_path, e),
+                }
             }
         }
     }
@@ -552,61 +557,52 @@ async fn get_available_plugins() -> Result<Vec<Plugin>, String> {
     Ok(plugins)
 }
 
+
 // Add a new remote using a plugin
 #[tauri::command]
 async fn add_remote_with_plugin(plugin_name: String, config: std::collections::HashMap<String, String>, config_path_opt: Option<String>) -> Result<CommandResult, String> {
-    // Find plugin configuration in multiple possible locations
-    let mut plugin_config_path = std::path::PathBuf::new();
-    let mut found = false;
-
-    // First, try relative to executable (for AppImage/prod)
-    if let Ok(exe_dir) = std::env::current_exe() {
-        if let Some(parent) = exe_dir.parent() {
-            let exe_plugin_path = parent.join("plugins").join(&plugin_name).join("config.json");
-            if exe_plugin_path.exists() {
-                plugin_config_path = exe_plugin_path;
-                found = true;
-            }
+    // Try to find plugins directory in multiple possible locations
+    let mut potential_paths = Vec::new();
+    
+    // 1. Current directory (AppImage/binary location)
+    if let Ok(current_dir) = std::env::current_dir() {
+        potential_paths.push(current_dir.join("plugins"));
+    }
+    
+    // 2. Parent directory (Dev mode: src-tauri/../plugins)
+    if let Ok(current_dir) = std::env::current_dir() {
+        if let Some(parent) = current_dir.parent() {
+            potential_paths.push(parent.join("plugins"));
+        }
+    }
+    
+    // 3. Executable directory (often safer than current_dir)
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            potential_paths.push(exe_dir.join("plugins"));
         }
     }
 
-    // If not found relative to executable, try relative to current dir (for dev)
-    if !found {
-        let current_dir_plugin = std::env::current_dir()
-            .map_err(|e| format!("Failed to get current directory: {}", e))?
-            .join("..")  // Go up to project root
-            .join("plugins")
-            .join(&plugin_name)
-            .join("config.json");
-        if current_dir_plugin.exists() {
-            plugin_config_path = current_dir_plugin;
-            found = true;
-        } else {
-            // Try current directory directly
-            let current_plugin = std::env::current_dir()
-                .map_err(|e| format!("Failed to get current directory: {}", e))?
-                .join("plugins")
-                .join(&plugin_name)
-                .join("config.json");
-            if current_plugin.exists() {
-                plugin_config_path = current_plugin;
-                found = true;
-            }
-        }
-    }
+    // Find the first valid plugins directory
+    let plugins_dir = potential_paths.into_iter()
+        .find(|p| p.exists() && p.is_dir())
+        .ok_or_else(|| "Plugins directory not found".to_string())?
+        .join(&plugin_name);
 
-    if !found {
+    let config_path_file = plugins_dir.join("config.json");
+    if !config_path_file.exists() {
         return Err(format!("Plugin {} not found", plugin_name));
     }
 
-    let config_content = std::fs::read_to_string(&plugin_config_path)
+    let config_content = std::fs::read_to_string(&config_path_file)
         .map_err(|e| format!("Failed to read plugin config: {}", e))?;
 
     let plugin: Plugin = serde_json::from_str(&config_content)
         .map_err(|e| format!("Failed to parse plugin config: {}", e))?;
 
-    // Validate the provided configuration against the plugin schema - check basic fields
-    for field in &plugin.basic_fields {
+    // Validate all fields (basic + advanced combined for compatibility)
+    let all_fields = [&plugin.basic_fields[..], &plugin.advanced_fields[..]].concat();
+    for field in &all_fields {
         if field.required && !config.contains_key(&field.name) {
             return Err(format!("Required field '{}' is missing", field.name));
         }
@@ -629,34 +625,10 @@ async fn add_remote_with_plugin(plugin_name: String, config: std::collections::H
         }
     }
 
-    // Validate advanced fields as well
-    for field in &plugin.advanced_fields {
-        if field.required && !config.contains_key(&field.name) {
-            return Err(format!("Required field '{}' is missing", field.name));
-        }
-
-        if let Some(value) = config.get(&field.name) {
-            // Basic validation based on field type
-            match field.field_type.as_str() {
-                "number" => {
-                    if value.parse::<f64>().is_err() {
-                        return Err(format!("Field '{}' must be a number", field.name));
-                    }
-                },
-                "checkbox" => {
-                    if value != "true" && value != "false" {
-                        return Err(format!("Field '{}' must be true or false", field.name));
-                    }
-                },
-                _ => {} // Other types don't need specific validation here
-            }
-        }
-    }
-
-    // Prepare the configuration for saving - obscure passwords where needed
+    // Process configuration with password obfuscation (keeping this useful feature)
     let mut processed_config = std::collections::HashMap::new();
     for (key, value) in config {
-        if key == "pass" { // For now, just obscure the password field - this could be extended for other sensitive fields
+        if key == "pass" { // Obfuscate password if present
             if !value.is_empty() {
                 // Call rclone obscure to encrypt the password
                 let output = std::process::Command::new("rclone")

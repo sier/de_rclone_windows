@@ -1,0 +1,95 @@
+{
+  "name": "ftp",
+  "display_name": "FTP",
+  "description": "FTP remote type plugin",
+  "version": "1.0.0",
+  "author": "de_rclone",
+  "secure": false,
+  "basic_fields": [
+    {
+      "name": "host",
+      "display_name": "Host",
+      "type": "text",
+      "required": true,
+      "placeholder": "ftp.example.com",
+      "tooltip": "FTP host to connect to"
+    },
+    {
+      "name": "user",
+      "display_name": "Username",
+      "type": "text",
+      "required": true,
+      "placeholder": "username",
+      "tooltip": "FTP username"
+    },
+    {
+      "name": "port",
+      "display_name": "Port",
+      "type": "number",
+      "required": false,
+      "default": "21",
+      "placeholder": "21",
+      "tooltip": "FTP port number, default is 21"
+    },
+    {
+      "name": "pass",
+      "display_name": "Password",
+      "type": "password",
+      "required": false,
+      "placeholder": "password",
+      "tooltip": "FTP password"
+    }
+  ],
+  "advanced_fields": [
+    {
+      "name": "tls",
+      "display_name": "Implicit TLS",
+      "type": "checkbox",
+      "required": false,
+      "default": "false",
+      "tooltip": "Use implicit TLS (FTPS)"
+    },
+    {
+      "name": "explicit_tls",
+      "display_name": "Explicit TLS",
+      "type": "checkbox",
+      "required": false,
+      "default": "false",
+      "tooltip": "Use explicit TLS (FTPS)"
+    },
+    {
+      "name": "concurreny",
+      "display_name": "Concurrency",
+      "type": "number",
+      "required": false,
+      "default": "2",
+      "tooltip": "Maximum number of concurrent connections"
+    },
+    {
+      "name": "no_check_certificate",
+      "display_name": "No Check Certificate",
+      "type": "checkbox",
+      "required": false,
+      "default": "false",
+      "tooltip": "Do not verify SSL server certificate"
+    },
+    {
+      "name": "disable_epsv",
+      "display_name": "Disable EPSV",
+      "type": "checkbox",
+      "required": false,
+      "default": "false",
+      "tooltip": "Disable using EPSV for passive connections"
+    }
+  ],
+  "validation": {
+    "host": {
+      "required": true,
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](\\.[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9])*"
+    },
+    "port": {
+      "min": 1,
+      "max": 65535
+    }
+  }
+}

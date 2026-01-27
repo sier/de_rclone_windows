@@ -20,7 +20,10 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["appimage"]
+    "targets": ["appimage"],
+    "icon": [
+      "icons/icon.png"
+    ]
   },
   "plugins": {}
 }

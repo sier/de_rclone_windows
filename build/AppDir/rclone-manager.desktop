@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=de_rclone
-Comment=A CS16-style rclone GUI manager
-Exec=rclone-manager
-Icon=rclone-manager
-Terminal=false
-Categories=Utility;FileTools;

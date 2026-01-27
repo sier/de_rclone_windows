@@ -24,7 +24,7 @@ mkdir -p build/AppDir/usr/share/applications
 mkdir -p build/AppDir/usr/share/icons/hicolor/256x256/apps
 
 echo "Copying application binary..."
-cp ../src-tauri/target/release/rclone-manager build/AppDir/usr/bin/
+cp ../src-tauri/target/release/de_rclone build/AppDir/usr/bin/
 
 echo "Creating AppRun script..."
 cat > build/AppDir/AppRun << 'EOF'
@@ -35,32 +35,36 @@ export PATH="${HERE}/usr/bin:${HERE}/usr/lib:${PATH}"
 export LD_LIBRARY_PATH="${HERE}/usr/lib:${LD_LIBRARY_PATH}"
 
 # Run the application
-exec "${HERE}/usr/bin/rclone-manager" "$@"
+exec "${HERE}/usr/bin/de_rclone" "$@"
 EOF
 
 chmod +x build/AppDir/AppRun
 
 echo "Creating desktop entry..."
-cat > build/AppDir/rclone-manager.desktop << 'EOF'
+cat > build/AppDir/de_rclone.desktop << 'EOF'
 [Desktop Entry]
 Type=Application
 Name=de_rclone
 Comment=A CS16-style rclone GUI manager
-Exec=rclone-manager
-Icon=rclone-manager
+Exec=de_rclone
+Icon=de_rclone
 Terminal=false
 Categories=Utility;FileTools;
 EOF
 
-chmod 644 build/AppDir/rclone-manager.desktop
+chmod 644 build/AppDir/de_rclone.desktop
 
 echo "Copying desktop entry to applications folder..."
-cp build/AppDir/rclone-manager.desktop build/AppDir/usr/share/applications/
+cp build/AppDir/de_rclone.desktop build/AppDir/usr/share/applications/
 
 echo "Creating icon placeholder (to be replaced with actual icon)..."
 # For now, just create a placeholder, but in a real scenario we'd copy an actual icon
-echo "Icon placeholder" > build/AppDir/rclone-manager.png
-cp build/AppDir/rclone-manager.png build/AppDir/usr/share/icons/hicolor/256x256/apps/rclone-manager.png
+echo "Icon placeholder" > build/AppDir/de_rclone.png
+cp build/AppDir/de_rclone.png build/AppDir/usr/share/icons/hicolor/256x256/apps/de_rclone.png
+
+echo "Copying plugins..."
+cp -r ../plugins build/AppDir/usr/bin/
+
 
 echo "Building AppImage using appimagetool..."
 
@@ -76,19 +80,17 @@ ARCH=x86_64 ./appimagetool --comp squashfs build/AppDir/
 
 # Rename the resulting AppImage
 if [ -f "de_rclone-*.AppImage" ]; then
-    mv de_rclone-*.AppImage rclone-manager.AppImage
-elif [ -f "rclone-manager-*.AppImage" ]; then
-    mv rclone-manager-*.AppImage rclone-manager.AppImage
+    mv de_rclone-*.AppImage de_rclone.AppImage
 elif ls *.AppImage 1> /dev/null 2>&1; then
-    mv *.AppImage rclone-manager.AppImage
+    mv *.AppImage de_rclone.AppImage
 fi
 
-chmod +x rclone-manager.AppImage
+chmod +x de_rclone.AppImage
 
 echo "AppImage build complete!"
-echo "AppImage is located at: $(pwd)/rclone-manager.AppImage"
+echo "AppImage is located at: $(pwd)/de_rclone.AppImage"
 
 # Create a symbolic link to the root directory for easy access
-ln -sf rclone-manager.AppImage .. || true
+ln -sf de_rclone.AppImage .. || true
 
 echo "Build process finished successfully!"

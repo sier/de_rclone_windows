@@ -1,0 +1,82 @@
+{
+    "name": "s3",
+    "display_name": "S3",
+    "description": "S3 (AWS, Minio, Wasabi, etc)",
+    "version": "1.0.0",
+    "author": "de_rclone",
+    "secure": true,
+    "basic_fields": [
+        {
+            "name": "provider",
+            "display_name": "Provider",
+            "type": "text",
+            "required": true,
+            "default": "AWS",
+            "placeholder": "AWS, Minio, Wasabi, DigitalOcean, etc",
+            "tooltip": "Choose your S3 provider"
+        },
+        {
+            "name": "access_key_id",
+            "display_name": "Access Key ID",
+            "type": "text",
+            "required": false,
+            "placeholder": "AWS Access Key ID",
+            "tooltip": "AWS Access Key ID - leave blank for anonymous access or IAM role"
+        },
+        {
+            "name": "secret_access_key",
+            "display_name": "Secret Access Key",
+            "type": "password",
+            "required": false,
+            "placeholder": "AWS Secret Access Key",
+            "tooltip": "AWS Secret Access Key (password)"
+        },
+        {
+            "name": "region",
+            "display_name": "Region",
+            "type": "text",
+            "required": false,
+            "placeholder": "us-east-1",
+            "tooltip": "Region to connect to"
+        },
+        {
+            "name": "endpoint",
+            "display_name": "Endpoint",
+            "type": "text",
+            "required": false,
+            "placeholder": "s3.amazonaws.com",
+            "tooltip": "Endpoint for S3 API"
+        }
+    ],
+    "advanced_fields": [
+        {
+            "name": "acl",
+            "display_name": "ACL",
+            "type": "text",
+            "required": false,
+            "default": "private",
+            "tooltip": "Canned ACL used when creating buckets and storing or copying objects"
+        },
+        {
+            "name": "server_side_encryption",
+            "display_name": "Server Side Encryption",
+            "type": "text",
+            "required": false,
+            "placeholder": "AES256",
+            "tooltip": "The server-side encryption algorithm used when storing this object in S3"
+        },
+        {
+            "name": "storage_class",
+            "display_name": "Storage Class",
+            "type": "text",
+            "required": false,
+            "default": "STANDARD",
+            "tooltip": "The storage class to use when storing new objects in S3"
+        }
+    ],
+    "validation": {
+        "provider": {
+            "required": true
+        }
+    }
+}

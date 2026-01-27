@@ -875,7 +875,7 @@ async function addRemote() {
     document.body.appendChild(modal);
 
     // When a remote type is selected, load its specific fields
-    document.getElementById('remote-type').addEventListener('change', async function() {
+    document.getElementById('remote-type').addEventListener('change', async function () {
       const selectedPluginName = this.value;
       const plugins = await invoke('get_available_plugins');
       const selectedPlugin = plugins.find(p => p.name === selectedPluginName);
@@ -965,7 +965,7 @@ async function addRemote() {
         // Add event listener for advanced fields toggle
         const toggleButton = document.getElementById('toggle-advanced-fields');
         if (toggleButton) {
-          toggleButton.addEventListener('click', function() {
+          toggleButton.addEventListener('click', function () {
             const container = document.getElementById('advanced-fields-container');
             if (container.style.display === 'none') {
               container.style.display = 'block';
@@ -980,7 +980,7 @@ async function addRemote() {
     });
 
     // Add event listener for submit button
-    document.querySelector('.submit-remote-btn').addEventListener('click', async function() {
+    document.querySelector('.submit-remote-btn').addEventListener('click', async function () {
       const remoteType = document.getElementById('remote-type').value;
       const remoteName = document.getElementById('remote-name').value.trim();
 
@@ -1257,7 +1257,7 @@ async function openEditRemoteForm(remote, plugin, remoteConfig) {
         <div style="margin: 10px 0;">
           <label class="cs-input__label">Remote Name:</label>
           <div style="margin-top: 4px;">
-            <input type="text" id="remote-name" class="cs-input" value="${remote.name}" readonly style="width: 100%; background-color: var(--secondary-bg); color: var(--text-3);">
+            <input type="text" id="remote-name" class="cs-input" value="${remote.name}" style="width: 100%;">
           </div>
         </div>
         <div style="margin: 10px 0;">
@@ -1329,8 +1329,8 @@ async function openEditRemoteForm(remote, plugin, remoteConfig) {
       // To edit, we first delete the existing remote and add the updated one
       // This is the simplest way to handle renaming since INI files don't support renaming sections
       const deleteResult = await invoke('delete_remote', {
-        remote_name: remote.name,
-        config_path_opt: configPath
+        remoteName: remote.name,
+        configPathOpt: configPath
       });
 
       if (!deleteResult.success) {
@@ -1340,9 +1340,9 @@ async function openEditRemoteForm(remote, plugin, remoteConfig) {
 
       // Then add the updated remote with new values
       const addResult = await invoke('add_remote_with_plugin', {
-        plugin_name: newType,
+        pluginName: newType,
         config: config,
-        config_path_opt: configPath
+        configPathOpt: configPath
       });
 
       if (addResult.success) {

@@ -1,5 +1,5 @@
 [package]
-name = "rclone-manager"
+name = "de_rclone"
 version = "0.1.0"
 edition = "2021"
 
