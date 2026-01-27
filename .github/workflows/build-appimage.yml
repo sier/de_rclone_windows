@@ -69,7 +69,7 @@ jobs:
     - name: Build the app
       run: |
         cd src-tauri
-        cargo tauri build --release
+        cargo tauri build
 
     - name: Install appimagetool
       run: |
