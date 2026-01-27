@@ -87,6 +87,10 @@ jobs:
       run: |
         cp src-tauri/target/release/rclone-manager AppDir/usr/bin/
 
+    - name: Copy plugins
+      run: |
+        cp -r plugins AppDir/usr/bin/
+
     - name: Create AppRun script
       run: |
         cat > AppDir/AppRun << 'EOF'
@@ -122,7 +126,7 @@ jobs:
         mv *AppImage rclone-manager-x86_64.AppImage
 
     - name: Upload AppImage as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: rclone-manager-appimage
         path: rclone-manager-x86_64.AppImage
