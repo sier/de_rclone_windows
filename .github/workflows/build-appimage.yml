@@ -64,7 +64,7 @@ jobs:
 
     - name: Install Tauri CLI
       run: |
-        cargo install tauri-cli --version 2.0.0-rc
+        cargo install tauri-cli --version 2.9.6
 
     - name: Build the app
       run: |
