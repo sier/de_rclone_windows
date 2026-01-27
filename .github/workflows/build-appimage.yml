@@ -91,6 +91,13 @@ jobs:
       run: |
         cp -r plugins AppDir/usr/bin/
 
+    - name: Copy icon
+      run: |
+        # Copy to root of AppDir (required by appimagetool if defined in desktop file)
+        cp icon.png AppDir/de_rclone.png
+        # Copy to standard icon path
+        cp icon.png AppDir/usr/share/icons/hicolor/256x256/apps/de_rclone.png
+
     - name: Create AppRun script
       run: |
         cat > AppDir/AppRun << 'EOF'
