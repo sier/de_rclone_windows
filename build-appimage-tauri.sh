@@ -76,7 +76,7 @@ if ! command -v appimagetool &> /dev/null; then
 fi
 
 # Run appimagetool to create the AppImage
-ARCH=x86_64 ./appimagetool --comp squashfs build/AppDir/
+ARCH=x86_64 ./appimagetool --comp zstd build/AppDir/
 
 # Rename the resulting AppImage
 if [ -f "de_rclone-*.AppImage" ]; then

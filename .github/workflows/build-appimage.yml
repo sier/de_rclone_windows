@@ -129,7 +129,7 @@ jobs:
 
     - name: Build AppImage
       run: |
-        ARCH=x86_64 ./appimagetool --comp squashfs AppDir/
+        ARCH=x86_64 ./appimagetool --comp zstd AppDir/
         mv *AppImage de_rclone-x86_64.AppImage
 
     - name: Upload AppImage as artifact
