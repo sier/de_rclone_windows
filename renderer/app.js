@@ -164,7 +164,7 @@ async function renderRemotesTable(remotes) {
   // Update the "No remotes" message to account for the new column
   if (!remotes || remotes.length === 0) {
     const row = document.createElement('tr');
-    row.innerHTML = '<td colspan="6" style="text-align: center; padding: 0px;">No remotes configured. Please configure rclone remotes in ~/.config/rclone/rclone.conf</td>';
+    row.innerHTML = '<td colspan="7" style="text-align: center; padding: 0px;">No remotes configured. Please configure rclone remotes in ~/.config/rclone/rclone.conf</td>';
     remoteTableBody.appendChild(row);
     return;
   }
@@ -198,6 +198,7 @@ async function renderRemotesTable(remotes) {
       <td>${remote.mounted}</td>
       <td>${remote.cron}</td>
       <td>${remote.mount_point}</td>
+      <td><span id="latency-${remote.name}" class="text-muted">...</span></td>
     `;
 
     row.addEventListener('click', () => {
@@ -231,7 +232,37 @@ async function renderRemotesTable(remotes) {
     });
 
     remoteTableBody.appendChild(row);
+
+    // Trigger latency check immediately
+    checkLatency(remote.name);
   });
+}
+
+async function checkLatency(remoteName) {
+  const el = document.getElementById(`latency-${remoteName}`);
+  if (!el) return;
+
+  // Set minimal text
+  el.textContent = '...';
+
+  try {
+    const configPath = localStorage.getItem('rcloneConfigPath') || null;
+    const result = await invoke('check_latency', { remoteName, configPathOpt: configPath });
+
+    if (result.success) {
+      el.textContent = `${result.latency}ms`;
+      // Set color directly using style to avoid CSS parsing issues in some contexts
+      if (result.latency < 200) el.style.color = '#38b038'; // Greenish
+      else if (result.latency < 1000) el.style.color = '#c4b550'; // Yellowish
+      else el.style.color = '#ff6b6b'; // Red
+    } else {
+      el.textContent = result.error === 'Timeout' ? 'Timeout' : 'Error';
+      el.style.color = '#ff6b6b';
+    }
+  } catch (e) {
+    el.textContent = 'Error';
+    el.style.color = '#ff6b6b';
+  }
 }
 
 // Function to update the header with remote count

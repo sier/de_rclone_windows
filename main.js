@@ -266,6 +266,37 @@ ipcMain.handle('test_connection', async (event, { remoteName, configPathOpt }) =
     }
 });
 
+// Latency check handler
+ipcMain.handle('check_latency', async (event, { remoteName, configPathOpt }) => {
+    const configPath = getRcloneConfigPath(configPathOpt);
+    const start = Date.now();
+    try {
+        // Test connection with a timeout. lsf is lightweight.
+        // We use a shorter timeout for latency checks (3s)
+        const cmd = `rclone lsf "${remoteName}:" --max-depth 1 ${configPathOpt ? `--config "${configPath}"` : ''}`;
+
+        await new Promise((resolve, reject) => {
+            exec(cmd, { timeout: 3000 }, (error, stdout, stderr) => {
+                if (error) {
+                    // Check if it was a timeout
+                    if (error.signal === 'SIGTERM') {
+                        reject(new Error('Timeout'));
+                    } else {
+                        reject({ error, stderr });
+                    }
+                    return;
+                }
+                resolve();
+            });
+        });
+
+        const duration = Date.now() - start;
+        return { success: true, latency: duration };
+    } catch (e) {
+        return { success: false, error: e.message || 'Error' };
+    }
+});
+
 ipcMain.handle('is_rclone_installed', async () => {
     try {
         await execPromise('rclone --version');
