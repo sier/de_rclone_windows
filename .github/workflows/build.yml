@@ -17,20 +17,18 @@ jobs:
       with:
         node-version: 20
         cache: 'npm'
-        cache-dependency-path: de_rclone_electron/package-lock.json
+        cache-dependency-path: package-lock.json
         
     - name: Install Dependencies
       run: |
-        cd de_rclone_electron
         npm ci
         
     - name: Build AppImage
       run: |
-        cd de_rclone_electron
         npm run dist -- --linux AppImage
         
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: de_rclone-AppImage
-        path: de_rclone_electron/dist/*.AppImage
+        path: dist/*.AppImage
