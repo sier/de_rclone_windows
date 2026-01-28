@@ -322,78 +322,54 @@ ipcMain.handle('add_to_cron', async (event, { remoteName, configPathOpt }) => {
         const mountPoint = getMountDir(remoteName);
         const configPath = getRcloneConfigPath(configPathOpt);
         const cmd = getMountCmdString(remoteName, mountPoint, configPath);
-        const cronEntry = `@reboot ${cmd}`;
+        // Add comment to identify entry
+        const cronEntry = `@reboot ${cmd} # Added by de_rclone: ${remoteName}`;
 
-        // Check if already exists
+        // Check if already exists (relaxed check)
         const list = await execPromise('crontab -l').catch(() => ({ stdout: '' }));
-        if (list.stdout.includes(cmd)) {
-            return { success: true, message: `${remoteName} is already in startup (cron).` };
+        if (list.stdout.includes(`rclone mount`) && list.stdout.includes(`${remoteName}:`)) {
+            return { success: true, message: `${remoteName} is already enabled for auto-mount.` };
         }
 
         // Add to crontab
-        // Use printf to handle newlines correctly, avoiding echo execution issues
-        // We append the new line
         await execPromise(`(crontab -l 2>/dev/null; echo "${cronEntry}") | crontab -`);
 
-        return { success: true, message: `Added ${remoteName} to startup.` };
+        return { success: true, message: `Enabled auto-mount for ${remoteName}.` };
     } catch (e) {
-        return { success: false, message: `Failed to add to startup: ${e.stderr || e.message}` };
+        return { success: false, message: `Failed to enable auto-mount: ${e.stderr || e.message}` };
     }
 });
 
 ipcMain.handle('remove_from_cron', async (event, { remoteName, configPathOpt }) => {
     try {
-        const mountPoint = getMountDir(remoteName);
-        // We need to match the command part mainly to identify the line
-        // Depending on config path, the string might vary, so we should try to match the remote and mountpoint
-        // Robust way: filter lines containing `rclone mount remoteName: mountPoint`
-
-        // However, getMountCmdString returns the exact string we expect.
-        const configPath = getRcloneConfigPath(configPathOpt);
-        // We construct the core identifying part of the command
-        const ident = `rclone mount ${remoteName}: "${mountPoint}"`;
-
         const list = await execPromise('crontab -l').catch(() => ({ stdout: '' }));
-        if (!list.stdout.includes(ident)) {
-            return { success: true, message: `${remoteName} is not in startup.` };
+
+        // Relaxed check for removal
+        if (!list.stdout.includes(`rclone mount`) || !list.stdout.includes(`${remoteName}:`)) {
+            return { success: true, message: `${remoteName} is not enabled for auto-mount.` };
         }
 
-        // Remove lines containing the unique identifier
-        // grep -v "rclone mount remoteName: mountPoint"
-        // Need to escape special chars if any, but remoteName and mountPoint are paths/names
-
-        // Escape check for safety? simple approach:
         const tempFile = path.join(os.tmpdir(), `cron_${Date.now()}`);
         fs.writeFileSync(tempFile, list.stdout);
 
         const content = fs.readFileSync(tempFile, 'utf8');
         const lines = content.split('\n');
-        const newLines = lines.filter(line => !line.includes(ident) && line.trim() !== '');
+        // Filter out lines that look like a mount for this remote
+        const newLines = lines.filter(line => {
+            const isTarget = line.includes('rclone mount') && line.includes(`${remoteName}:`);
+            return !isTarget && line.trim() !== '';
+        });
 
         const newContent = newLines.join('\n') + (newLines.length > 0 ? '\n' : '');
-
-        // Write back
-        // We can pass string to crontab - 
-        // But passing newContent via stdin to exec might be tricky with escaping.
-        // let's use the temp file approach for safety or just carefully construct pipe
-
-        // Easier:
-        // (crontab -l | grep -v "FIXME") | crontab -
-        // But grep regex might be annoying.
-
-        // Let's use the node filtering result.
-        const filteredCmd = `echo "${newLines.join('\n').replace(/"/g, '\\"')}" | crontab -`;
-        // Wait, multiple lines echo might fail depending on shell.
-        // Better: write to temporary file, load from it, delete it.
 
         fs.writeFileSync(tempFile, newContent);
         await execPromise(`crontab "${tempFile}"`);
         fs.unlinkSync(tempFile);
 
-        return { success: true, message: `Removed ${remoteName} from startup.` };
+        return { success: true, message: `Disabled auto-mount for ${remoteName}.` };
 
     } catch (e) {
-        return { success: false, message: `Failed to remove from startup: ${e.stderr || e.message}` };
+        return { success: false, message: `Failed to disable auto-mount: ${e.stderr || e.message}` };
     }
 });
 
