@@ -203,12 +203,11 @@ async function renderRemotesTable(remotes) {
     row.addEventListener('click', () => {
       // Remove selection from other rows
       document.querySelectorAll('#remote-table-body tr').forEach(r => {
-        r.classList.remove('selected-row');
         r.style.backgroundColor = '';
       });
 
-      // Highlight selected row with class
-      row.classList.add('selected-row');
+      // Highlight selected row with more golden color
+      row.style.backgroundColor = 'var(--secondary-accent)';
       selectedRemote = remote;
       updateButtonStates(remote);
     });
@@ -219,12 +218,11 @@ async function renderRemotesTable(remotes) {
 
       // Remove selection from other rows
       document.querySelectorAll('#remote-table-body tr').forEach(r => {
-        r.classList.remove('selected-row');
         r.style.backgroundColor = '';
       });
 
-      // Highlight selected row with class
-      row.classList.add('selected-row');
+      // Highlight selected row with more golden color
+      row.style.backgroundColor = 'var(--secondary-accent)';
       selectedRemote = remote;
       updateButtonStates(remote);
 
@@ -822,9 +820,13 @@ async function addRemote() {
     }
 
     // Present user with plugin selection
-    let pluginOptions = '';
+    // Custom dropdown structure
+    let initialValue = plugins[0].name;
+    let initialDisplay = plugins[0].display_name;
+
+    let optionsHtml = '';
     plugins.forEach(plugin => {
-      pluginOptions += `<option value="${plugin.name}">${plugin.display_name}</option>`;
+      optionsHtml += `<div class="custom-option" data-value="${plugin.name}">${plugin.display_name}</div>`;
     });
 
     const addRemoteHtml = `
@@ -836,9 +838,16 @@ async function addRemote() {
           <div style="margin: 10px 0;">
             <label class="cs-input__label">Remote Type:</label>
             <div style="margin-top: 4px;">
-              <select id="remote-type" class="cs-select" style="width: 100%;">
-                ${pluginOptions}
-              </select>
+              
+              <!-- Custom Dropdown -->
+              <div class="custom-select-container" id="container-remote-type">
+                <div class="custom-select-trigger cs-select" id="trigger-remote-type">${initialDisplay}</div>
+                <div class="custom-select-options">
+                  ${optionsHtml}
+                </div>
+                <input type="hidden" id="remote-type" value="${initialValue}">
+              </div>
+
             </div>
           </div>
           <div style="margin: 10px 0;">
@@ -868,7 +877,39 @@ async function addRemote() {
 
     document.body.appendChild(modal);
 
-    // When a remote type is selected, load its specific fields
+    // Setup Custom Dropdown Logic
+    const configContainer = document.getElementById('container-remote-type');
+    const trigger = configContainer.querySelector('.custom-select-trigger');
+    const optionsProp = configContainer.querySelector('.custom-select-options');
+    const hiddenInput = document.getElementById('remote-type');
+    const options = configContainer.querySelectorAll('.custom-option');
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      optionsProp.classList.toggle('show');
+    });
+
+    options.forEach(option => {
+      option.addEventListener('click', (e) => {
+        e.stopPropagation();
+        trigger.textContent = option.textContent;
+        const newVal = option.getAttribute('data-value');
+        if (hiddenInput.value !== newVal) {
+          hiddenInput.value = newVal;
+          // Dispatch change event manually
+          hiddenInput.dispatchEvent(new Event('change'));
+        }
+        optionsProp.classList.remove('show');
+      });
+    });
+
+    window.addEventListener('click', (e) => {
+      if (!configContainer.contains(e.target)) {
+        optionsProp.classList.remove('show');
+      }
+    });
+
+    // When a remote type is selected, load its specific fields (now listening on hidden input)
     document.getElementById('remote-type').addEventListener('change', async function () {
       const selectedPluginName = this.value;
       const plugins = await invoke('get_available_plugins');

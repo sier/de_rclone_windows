@@ -160,13 +160,66 @@ body {
   min-width: 72px;
   text-align: center;
 }
-/* Selected row styling - Classic CS 1.6 Golden Yellow */
-.selected-row {
-  background-color: #c4b550 !important; /* Golden yellow */
-  color: black !important;
-}
 
 /* Ensure hover doesn't conflict too much, though selection takes precedence */
 #remote-table-body tr:hover:not(.selected-row) {
     background-color: rgba(196, 181, 80, 0.2);
+}
+
+/* Try to style native select options - Limited support */
+select option:checked,
+select option:hover,
+select:focus option:checked {
+  box-shadow: 0 0 10px 100px #c4b550 inset !important;
+  color: #000 !important;
+}
+
+/* Custom Dropdown Styling */
+.custom-select-container {
+    position: relative;
+    width: 100%;
+}
+
+.custom-select-trigger {
+    cursor: pointer;
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.custom-select-options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--secondary-bg); /* Match input bg */
+    border: 1px solid var(--border-dark);
+    z-index: 1000;
+    display: none;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: -1px; /* Overlap border */
+}
+
+.custom-select-options.show {
+    display: block;
+}
+
+.custom-option {
+    padding: 5px 3px;
+    cursor: pointer;
+    color: var(--secondary--text);
+    font-size: 16px;
+    line-height: 15px;
+}
+
+.custom-option:hover {
+    background-color: #c4b550; /* Golden yellow */
+    color: black;
+}
+
+.custom-option.selected {
+    background-color: var(--bg);
+    color: var(--accent);
 }
