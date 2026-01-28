@@ -306,6 +306,10 @@ ipcMain.handle('is_rclone_installed', async () => {
     }
 });
 
+ipcMain.handle('get_app_version', () => {
+    return app.getVersion();
+});
+
 ipcMain.handle('get_available_plugins', async () => {
     // Search for plugins
     const potentialPaths = [
@@ -473,6 +477,41 @@ ipcMain.handle('add_remote_with_plugin', async (event, { pluginName, config, con
     fs.writeFileSync(configPath, currentConfigContent + newBlock);
 
     return { success: true, message: `Successfully added remote '${remoteName}'` };
+});
+
+ipcMain.handle('delete_remote', async (event, { remoteName, configPathOpt }) => {
+    const configPath = getRcloneConfigPath(configPathOpt);
+    if (!fs.existsSync(configPath)) {
+        return { success: false, message: 'Config file not found' };
+    }
+
+    try {
+        const content = fs.readFileSync(configPath, 'utf8');
+        const lines = content.split('\n');
+        const newLines = [];
+        let deleting = false;
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                const section = trimmed.slice(1, -1);
+                if (section === remoteName) {
+                    deleting = true;
+                } else {
+                    deleting = false;
+                }
+            }
+
+            if (!deleting) {
+                newLines.push(line);
+            }
+        }
+
+        fs.writeFileSync(configPath, newLines.join('\n'));
+        return { success: true, message: `Deleted remote ${remoteName}` };
+    } catch (e) {
+        return { success: false, message: `Failed to delete remote: ${e.message}` };
+    }
 });
 
 ipcMain.handle('open_file_dialog', async () => {

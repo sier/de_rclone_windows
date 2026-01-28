@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <title>de_rclone</title>
@@ -7,26 +8,29 @@
     <link rel="stylesheet" href="style.css">
     <style>
         /* Base styles moved to style.css for better organization */
-        
+
         .header-title {
             color: var(--text);
         }
-        
+
         .status-text {
             color: var(--text);
         }
-        
+
         .version-text {
             color: var(--text-3);
             font-size: 12px;
         }
-        
+
         .remote-table-container {
             /* Styles overlapping with style.css removed for consistency */
             background-color: var(--secondary-bg);
-            border: 1px solid #292c21; /* Dark outer border */
-            outline: 1px solid #8c9284; /* Light outer border to create 3D effect */
-            outline-offset: -1px; /* Inside the border */
+            border: 1px solid #292c21;
+            /* Dark outer border */
+            outline: 1px solid #8c9284;
+            /* Light outer border to create 3D effect */
+            outline-offset: -1px;
+            /* Inside the border */
         }
 
         table {
@@ -34,7 +38,8 @@
             border-collapse: collapse;
         }
 
-        th, td {
+        th,
+        td {
             padding: 0px 4px;
             text-align: left;
         }
@@ -44,13 +49,16 @@
             color: var(--text);
             font-weight: normal;
             border: 1px solid;
-            border-color: #8c9284 #292c21 #292c21 #8c9284; /* Classic CS16-style border */
+            border-color: #8c9284 #292c21 #292c21 #8c9284;
+            /* Classic CS16-style border */
         }
 
         /* Add classic CS16-style borders between header columns */
         th:not(:last-child) {
-            border-right: 1px solid #292c21; /* Dark border */
-            box-shadow: 1px 0 0 #8c9284; /* Light border just to the right */
+            border-right: 1px solid #292c21;
+            /* Dark border */
+            box-shadow: 1px 0 0 #8c9284;
+            /* Light border just to the right */
         }
 
         td {
@@ -65,13 +73,14 @@
         .cs-btn {
             margin-right: 5px;
         }
-        
+
         .settings-icon {
             cursor: pointer;
             font-size: 18px;
         }
     </style>
 </head>
+
 <body>
     <div class="main-container">
         <div class="header">
@@ -84,7 +93,8 @@
                 <table id="remote-table">
                     <thead>
                         <tr>
-                            <th style="width: 25px; text-align: center; padding: 0px;"><img src="shield.svg" alt="Shield" class="shield-icon"></th>
+                            <th style="width: 25px; text-align: center; padding: 0px;"><img src="shield.svg"
+                                    alt="Shield" class="shield-icon"></th>
                             <th>Remote</th>
                             <th>Type</th>
                             <th>Mounted</th>
@@ -110,11 +120,12 @@
 
         <div class="status-bar">
             <div class="status-text" id="status-text">Ready</div>
-            <div class="version-text">v1.0.6</div>
+            <div class="version-text" id="app-version">v...</div>
         </div>
     </div>
 
     <script type="module" src="app.js"></script>
 
 </body>
+
 </html>

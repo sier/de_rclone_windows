@@ -32,6 +32,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Set up event listeners with debugging
   setupEventListeners();
 
+  // Load version
+  invoke('get_app_version').then(version => {
+    const el = document.getElementById('app-version');
+    if (el) el.textContent = `v${version}`;
+  }).catch(e => console.error("Failed to load version", e));
+
   // Load remotes
   loadRemotes().catch(error => {
     console.error('Failed to load remotes:', error);
@@ -1182,6 +1188,43 @@ function showGeneralModal(title, message, buttonText = 'OK', resultType = 'info'
   return modal;
 }
 
+// Function to show a CS confirmation modal
+function showConfirmModal(title, message, onConfirm) {
+  const modal = document.createElement('div');
+  modal.className = 'progress-modal';
+
+  modal.innerHTML = `
+    <div class="progress-modal-content">
+      <div class="progress-header">
+        <span class="progress-title">${title}</span>
+      </div>
+      <div class="progress-body">
+        <div class="progress-message">${message.replace(/\n/g, '<br>')}</div>
+        <div class="progress-content" style="justify-content: flex-end; padding-top: 10px;">
+          <button class="cs-btn" id="confirm-cancel-btn" style="margin-right: 5px;">Cancel</button>
+          <button class="cs-btn" id="confirm-ok-btn">OK</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const cancelBtn = modal.querySelector('#confirm-cancel-btn');
+  const okBtn = modal.querySelector('#confirm-ok-btn');
+
+  const closeModal = () => {
+    modal.remove();
+  };
+
+  cancelBtn.addEventListener('click', closeModal);
+
+  okBtn.addEventListener('click', () => {
+    closeModal();
+    if (onConfirm) onConfirm();
+  });
+}
+
 // Create context menu for remote
 function createContextMenu(x, y, remote) {
   // Remove any existing context menu
@@ -1546,33 +1589,29 @@ function loadPluginFieldsForEdit(plugin, remoteConfig) {
 
 // Handle deleting a remote
 async function handleDeleteRemote(remote) {
-  const confirmed = confirm(`Are you sure you want to delete remote '${remote.name}'?\n\nThis action cannot be undone.`);
+  showConfirmModal('Delete Remote', `Are you sure you want to delete remote '${remote.name}'?\n\nThis action cannot be undone.`, async () => {
+    try {
+      // Get the config path from localStorage or use default (null)
+      const configPath = localStorage.getItem('rcloneConfigPath') || null;
 
-  if (!confirmed) {
-    return;
-  }
+      // Call the backend to delete the remote
+      const result = await invoke('delete_remote', {
+        remoteName: remote.name,
+        config_path_opt: configPath
+      });
 
-  try {
-    // Get the config path from localStorage or use default (null)
-    const configPath = localStorage.getItem('rcloneConfigPath') || null;
-
-    // Call the backend to delete the remote
-    const result = await invoke('delete_remote', {
-      remoteName: remote.name,
-      config_path_opt: configPath
-    });
-
-    if (result.success) {
-      showGeneralModal('Success', result.message);
-      // Reload remotes to reflect the change
-      await loadRemotes();
-    } else {
-      showGeneralModal('Error', result.message);
+      if (result.success) {
+        showGeneralModal('Success', result.message);
+        // Reload remotes to reflect the change
+        await loadRemotes();
+      } else {
+        showGeneralModal('Error', result.message);
+      }
+    } catch (error) {
+      console.error('Error deleting remote:', error);
+      showGeneralModal('Error', `Failed to delete remote: ${error.message || error}`);
     }
-  } catch (error) {
-    console.error('Error deleting remote:', error);
-    showGeneralModal('Error', `Failed to delete remote: ${error.message || error}`);
-  }
+  });
 }
 
 // Export functions for Tauri commands to use if needed
