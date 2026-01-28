@@ -1173,7 +1173,7 @@ function createContextMenu(x, y, remote) {
 
   // Determine cron action
   const isCron = remote.cron === "Yes";
-  const cronAction = isCron ? "Remove from Startup" : "Add to Startup";
+  const cronAction = isCron ? "Disable auto-mount" : "Enable auto-mount";
   const cronIcon = isCron ? "⚡" : "⚡";
 
   // Create menu content with proper CS16 styling
@@ -1206,7 +1206,7 @@ function createContextMenu(x, y, remote) {
       const action = isCron ? 'remove_from_cron' : 'add_to_cron';
       const configPath = localStorage.getItem('rcloneConfigPath') || null;
 
-      showStatus(isCron ? "Removing from startup..." : "Adding to startup...", 'info');
+      showStatus(isCron ? "Disabling auto-mount..." : "Enabling auto-mount...", 'info');
 
       const result = await invoke(action, {
         remoteName: remote.name,

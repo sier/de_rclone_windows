@@ -117,10 +117,15 @@ ipcMain.handle('get_remotes', async (event, { configPathOpt }) => {
         try {
             const { stdout } = await execPromise('crontab -l');
             remotes.forEach(r => {
-                // Check using the core identifier: rclone mount remoteName: mountDir
-                const mountPoint = getMountDir(r.name);
-                const ident = `rclone mount ${r.name}: "${mountPoint}"`;
-                if (stdout.includes(ident)) {
+                // Relaxed check: rclone mount ... remoteName: ...
+                // We check if the line contains "rclone mount" and "remoteName:"
+                // This covers manual entries with different flags or quoting
+                const lines = stdout.split('\n');
+                const isCron = lines.some(line => {
+                    return line.includes('rclone mount') && line.includes(`${r.name}:`);
+                });
+
+                if (isCron) {
                     r.cron = "Yes";
                 }
             });
