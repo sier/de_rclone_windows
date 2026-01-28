@@ -12,6 +12,7 @@ function createWindow() {
         height: 600,
         title: "de_rclone",
         icon: path.join(__dirname, 'icon.png'),
+        autoHideMenuBar: true, // Hide menu bar (File, Edit, etc.)
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
@@ -19,6 +20,8 @@ function createWindow() {
         },
     });
 
+    // Explicitly remove the menu for production feel
+    mainWindow.setMenu(null);
     mainWindow.loadFile('renderer/index.html');
 }
 
@@ -389,85 +392,7 @@ ipcMain.handle('remove_from_cron', async (event, { remoteName, configPathOpt }) 
     }
 });
 
-async function getCrontab() {
-    try {
-        const { stdout } = await execPromise('crontab -l');
-        return stdout;
-    } catch (e) {
-        return ""; // Empty or no crontab
-    }
-}
 
-async function setCrontab(content) {
-    return new Promise((resolve, reject) => {
-        const child = exec('crontab -', (error) => {
-            if (error) reject(error);
-            else resolve();
-        });
-        child.stdin.write(content);
-        child.stdin.end();
-    });
-}
-
-function getCronEntry(remoteName) {
-    const mountPoint = getMountDir(remoteName);
-    return `@reboot rclone mount --vfs-cache-mode writes ${remoteName}: ${mountPoint}\n`;
-}
-
-ipcMain.handle('add_to_cron', async (event, { remoteName }) => {
-    const current = await getCrontab();
-    const entry = getCronEntry(remoteName);
-
-    // Check if loosely present (ignoring whitespace differences or exact command match)
-    // The original code checks for `rclone mount ... remoteName:`
-    if (current.includes(`${remoteName}:`)) {
-        // Simple check, maybe too simple, but matches original intent of avoiding dups
-        // Original: if current_cron.contains(&mount_cmd)
-        const mountCmd = `rclone mount --vfs-cache-mode writes ${remoteName}:`;
-        if (current.includes(mountCmd)) {
-            return { success: true, message: `Remote ${remoteName} is already scheduled for auto-mount` };
-        }
-    }
-
-    const newCron = current + (current.endsWith('\n') ? '' : '\n') + entry;
-
-    try {
-        await setCrontab(newCron);
-        return { success: true, message: `Added ${remoteName} to crontab for auto-mount` };
-    } catch (e) {
-        return { success: false, message: `Failed to add to crontab: ${e.message}` };
-    }
-});
-
-ipcMain.handle('remove_from_cron', async (event, { remoteName }) => {
-    const current = await getCrontab();
-    if (!current.trim()) {
-        return { success: true, message: "No crontab entries found" };
-    }
-
-    const mountCmd = `rclone mount --vfs-cache-mode writes ${remoteName}:`;
-    const lines = current.split('\n');
-    const newLines = lines.filter(line => !line.includes(mountCmd));
-
-    if (lines.length === newLines.length) {
-        return { success: true, message: `Remote ${remoteName} was not in crontab` };
-    }
-
-    const newCron = newLines.join('\n') + '\n';
-
-    try {
-        await setCrontab(newCron);
-        return { success: true, message: `Removed ${remoteName} from crontab` };
-    } catch (e) {
-        return { success: false, message: `Failed to remove from crontab: ${e.message}` };
-    }
-});
-
-ipcMain.handle('is_remote_in_cron', async (event, { remoteName }) => {
-    const current = await getCrontab();
-    const mountCmd = `rclone mount --vfs-cache-mode writes ${remoteName}:`;
-    return current.includes(mountCmd);
-});
 
 
 // --- Plugin & Config Functions ---
