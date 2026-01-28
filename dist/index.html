@@ -6,38 +6,10 @@
     <link rel="stylesheet" href="cs16.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
-        body {
-            margin: 0;
-            padding: 10px;
-            font-family: 'ArialPixel', system-ui, sans-serif;
-        }
-
-        .main-container {
-            display: flex;
-            flex-direction: column;
-            height: calc(100vh - 20px);
-            padding: 0; /* Remove padding inside main container */
-        }
-        
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            padding-bottom: 5px;
-        }
+        /* Base styles moved to style.css for better organization */
         
         .header-title {
-            font-size: 18px;
-            font-weight: bold;
             color: var(--text);
-        }
-        
-        .status-bar {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
-            margin-top: 10px;
         }
         
         .status-text {
@@ -50,8 +22,7 @@
         }
         
         .remote-table-container {
-            flex: 1;
-            overflow: auto;
+            /* Styles overlapping with style.css removed for consistency */
             background-color: var(--secondary-bg);
             border: 1px solid #292c21; /* Dark outer border */
             outline: 1px solid #8c9284; /* Light outer border to create 3D effect */
@@ -91,14 +62,6 @@
             background-color: var(--secondary-bg);
         }
 
-        
-        
-        .button-container {
-            display: flex;
-            gap: 5px;
-            margin: 10px 0;
-        }
-        
         .cs-btn {
             margin-right: 5px;
         }
@@ -121,7 +84,7 @@
                 <table id="remote-table">
                     <thead>
                         <tr>
-                            <th style="width: 25px; text-align: center; padding: 0px;"><img src="shield.svg" alt="Shield" style="width: 14px; height: 14px; vertical-align: middle;"></th>
+                            <th style="width: 25px; text-align: center; padding: 0px;"><img src="shield.svg" alt="Shield" class="shield-icon"></th>
                             <th>Remote</th>
                             <th>Type</th>
                             <th>Mounted</th>
