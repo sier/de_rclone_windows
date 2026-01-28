@@ -737,6 +737,9 @@ async function openSettings() {
   modal.id = 'settings-modal';
   modal.className = 'progress-modal'; // Use same overlay style as other modals
 
+  const currentTheme = localStorage.getItem('theme') || 'cs16';
+  const themeDisplay = currentTheme === 'cs16' ? 'CS 1.6 Steam' : 'CS 1.6 Steam'; // Only one for now
+
   modal.innerHTML = `
     <div class="progress-modal-content">
       <div class="progress-header">
@@ -753,9 +756,16 @@ async function openSettings() {
         <div style="margin: 10px 0;">
           <label class="cs-input__label">Theme:</label>
           <div style="margin-top: 4px;">
-            <select id="theme-select" class="cs-select">
-              <option value="cs16" ${localStorage.getItem('theme') === 'cs16' ? 'selected' : ''}>CS 1.6 Steam</option>
-            </select>
+            
+            <!-- Custom Dropdown for Theme -->
+            <div class="custom-select-container" id="container-theme-select">
+                <div class="custom-select-trigger cs-select" id="trigger-theme-select">${themeDisplay}</div>
+                <div class="custom-select-options">
+                  <div class="custom-option" data-value="cs16">CS 1.6 Steam</div>
+                </div>
+                <input type="hidden" id="theme-select" value="${currentTheme}">
+            </div>
+
           </div>
         </div>
         <div class="progress-content" style="justify-content: flex-end; padding-top: 15px;">
@@ -767,6 +777,9 @@ async function openSettings() {
   `;
 
   document.body.appendChild(modal);
+
+  // Setup custom dropdown
+  setupCustomDropdown('container-theme-select', 'theme-select');
 
   // Add event listeners for the buttons
   modal.querySelector('.settings-modal-ok-btn').addEventListener('click', () => {
@@ -878,36 +891,7 @@ async function addRemote() {
     document.body.appendChild(modal);
 
     // Setup Custom Dropdown Logic
-    const configContainer = document.getElementById('container-remote-type');
-    const trigger = configContainer.querySelector('.custom-select-trigger');
-    const optionsProp = configContainer.querySelector('.custom-select-options');
-    const hiddenInput = document.getElementById('remote-type');
-    const options = configContainer.querySelectorAll('.custom-option');
-
-    trigger.addEventListener('click', (e) => {
-      e.stopPropagation();
-      optionsProp.classList.toggle('show');
-    });
-
-    options.forEach(option => {
-      option.addEventListener('click', (e) => {
-        e.stopPropagation();
-        trigger.textContent = option.textContent;
-        const newVal = option.getAttribute('data-value');
-        if (hiddenInput.value !== newVal) {
-          hiddenInput.value = newVal;
-          // Dispatch change event manually
-          hiddenInput.dispatchEvent(new Event('change'));
-        }
-        optionsProp.classList.remove('show');
-      });
-    });
-
-    window.addEventListener('click', (e) => {
-      if (!configContainer.contains(e.target)) {
-        optionsProp.classList.remove('show');
-      }
-    });
+    setupCustomDropdown('container-remote-type', 'remote-type');
 
     // When a remote type is selected, load its specific fields (now listening on hidden input)
     document.getElementById('remote-type').addEventListener('change', async function () {
@@ -1531,3 +1515,57 @@ window.rcloneManager = {
   loadRemotes,
   showStatus
 };
+// Helper to setup custom dropdown behavior
+function setupCustomDropdown(containerId, hiddenInputId, onChangeCallback) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const trigger = container.querySelector('.custom-select-trigger');
+  const optionsContainer = container.querySelector('.custom-select-options');
+  const hiddenInput = document.getElementById(hiddenInputId);
+  const options = container.querySelectorAll('.custom-option');
+
+  if (!trigger || !optionsContainer || !hiddenInput) return;
+
+  // Toggle dropdown
+  trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Close other open dropdowns
+      document.querySelectorAll('.custom-select-options').forEach(el => {
+          if (el !== optionsContainer) el.classList.remove('show');
+      });
+      optionsContainer.classList.toggle('show');
+  });
+
+  // Handle option selection
+  options.forEach(option => {
+      option.addEventListener('click', (e) => {
+          e.stopPropagation();
+          trigger.textContent = option.textContent;
+          const newVal = option.getAttribute('data-value');
+          
+          if (hiddenInput.value !== newVal) {
+              hiddenInput.value = newVal;
+              // Dispatch change event manually for compatibility
+              hiddenInput.dispatchEvent(new Event('change'));
+              
+              if (onChangeCallback) {
+                  onChangeCallback(newVal);
+              }
+          }
+          optionsContainer.classList.remove('show');
+      });
+  });
+
+  // Close when clicking outside
+  const closeListener = (e) => {
+      if (!document.body.contains(container)) {
+          window.removeEventListener('click', closeListener);
+          return;
+      }
+      if (!container.contains(e.target)) {
+          optionsContainer.classList.remove('show');
+      }
+  };
+  window.addEventListener('click', closeListener);
+}

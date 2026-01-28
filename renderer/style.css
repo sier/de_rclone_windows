@@ -1,16 +1,19 @@
 /* CSS Reset & normalization for consistency across environments */
 * {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 body {
-    margin: 0;
-    padding: 0;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden; /* Prevent body scroll */
-    font-family: 'ArialPixel', sans-serif; /* Fallback to sans-serif */
-    -webkit-font-smoothing: none; /* Crisp pixel fonts */
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  /* Prevent body scroll */
+  font-family: 'ArialPixel', sans-serif;
+  /* Fallback to sans-serif */
+  -webkit-font-smoothing: none;
+  /* Crisp pixel fonts */
 }
 
 /* Load local ArialPixel font - Fixes missing fonts in AppImage */
@@ -19,7 +22,8 @@ body {
   src: url('./ArialPixel.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: block; /* Ensure text is visible */
+  font-display: block;
+  /* Ensure text is visible */
 }
 
 /* Main container styling */
@@ -28,8 +32,10 @@ body {
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 10px; /* Internal padding instead of body padding */
-  overflow: hidden; /* Prevent container scroll */
+  padding: 10px;
+  /* Internal padding instead of body padding */
+  overflow: hidden;
+  /* Prevent container scroll */
 }
 
 /* Header styling */
@@ -39,7 +45,8 @@ body {
   align-items: center;
   margin-bottom: 10px;
   padding-bottom: 5px;
-  flex-shrink: 0; /* Header shouldn't shrink */
+  flex-shrink: 0;
+  /* Header shouldn't shrink */
 }
 
 .header-title {
@@ -49,12 +56,12 @@ body {
 
 /* Shield Icon Sizing - Force dimensions to prevent huge icons */
 .shield-icon {
-    width: 14px !important;
-    height: 14px !important;
-    min-width: 14px;
-    min-height: 14px;
-    object-fit: contain;
-    vertical-align: middle;
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px;
+  min-height: 14px;
+  object-fit: contain;
+  vertical-align: middle;
 }
 
 /* Status bar styling */
@@ -63,7 +70,8 @@ body {
   justify-content: space-between;
   padding-top: 10px;
   border-top: 1px solid var(--border-dark);
-  flex-shrink: 0; /* Status bar shouldn't shrink */
+  flex-shrink: 0;
+  /* Status bar shouldn't shrink */
 }
 
 /* Table container styling */
@@ -71,18 +79,22 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* crucial for nested scroll */
+  overflow: hidden;
+  /* crucial for nested scroll */
   margin: 15px 0;
   justify-content: space-between;
-  min-height: 0; /* Flexbox scrolling fix */
+  min-height: 0;
+  /* Flexbox scrolling fix */
 }
 
 .remote-table-container {
   flex: 1;
-  overflow-y: auto; /* Enable vertical scroll */
+  overflow-y: auto;
+  /* Enable vertical scroll */
   overflow-x: hidden;
   margin-bottom: 5px;
-  min-height: 0; /* Flexbox scrolling fix */
+  min-height: 0;
+  /* Flexbox scrolling fix */
 }
 
 
@@ -116,10 +128,12 @@ body {
   border-bottom: 2px solid var(--border-dark);
   border-left: 2px solid var(--border-light);
   width: 400px;
-  max-width: 90vw; /* Responsive safety */
+  max-width: 90vw;
+  /* Responsive safety */
   padding: 0;
   border-radius: 0;
-  box-shadow: 4px 4px 10px rgba(0,0,0,0.5); /* Better visibility in production */
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.5);
+  /* Better visibility in production */
 }
 
 .progress-header {
@@ -131,27 +145,27 @@ body {
 }
 
 .progress-title {
-  font-weight: normal; 
+  font-weight: normal;
   margin: 0;
-  color: var(--text); 
+  color: var(--text);
 }
 
 .progress-body {
-  padding: 5px 15px 5px 15px; 
+  padding: 5px 15px 5px 15px;
   background-color: var(--bg);
 }
 
 .progress-content {
   display: flex;
   align-items: center;
-  gap: 6px; 
-  padding: 4px 0 8px 0; 
+  gap: 6px;
+  padding: 4px 0 8px 0;
 }
 
 
 .progress-message {
-  color: var(--text-3); 
-  margin-bottom: 4px; 
+  color: var(--text-3);
+  margin-bottom: 4px;
   margin-top: 0;
 }
 
@@ -162,9 +176,7 @@ body {
 }
 
 /* Ensure hover doesn't conflict too much, though selection takes precedence */
-#remote-table-body tr:hover:not(.selected-row) {
-    background-color: rgba(196, 181, 80, 0.2);
-}
+
 
 /* Try to style native select options - Limited support */
 select option:checked,
@@ -176,50 +188,53 @@ select:focus option:checked {
 
 /* Custom Dropdown Styling */
 .custom-select-container {
-    position: relative;
-    width: 100%;
+  position: relative;
+  width: 100%;
 }
 
 .custom-select-trigger {
-    cursor: pointer;
-    display: block;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+  cursor: pointer;
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .custom-select-options {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: var(--secondary-bg); /* Match input bg */
-    border: 1px solid var(--border-dark);
-    z-index: 1000;
-    display: none;
-    max-height: 200px;
-    overflow-y: auto;
-    margin-top: -1px; /* Overlap border */
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: var(--secondary-bg);
+  /* Match input bg */
+  border: 1px solid var(--border-dark);
+  z-index: 1000;
+  display: none;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: -1px;
+  /* Overlap border */
 }
 
 .custom-select-options.show {
-    display: block;
+  display: block;
 }
 
 .custom-option {
-    padding: 5px 3px;
-    cursor: pointer;
-    color: var(--secondary--text);
-    font-size: 16px;
-    line-height: 15px;
+  padding: 5px 3px;
+  cursor: pointer;
+  color: var(--secondary--text);
+  font-size: 16px;
+  line-height: 15px;
 }
 
 .custom-option:hover {
-    background-color: #c4b550; /* Golden yellow */
-    color: black;
+  background-color: #c4b550;
+  /* Golden yellow */
+  color: black;
 }
 
 .custom-option.selected {
-    background-color: var(--bg);
-    color: var(--accent);
+  background-color: var(--bg);
+  color: var(--accent);
 }
