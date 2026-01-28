@@ -182,7 +182,7 @@ body {
 select option:checked,
 select option:hover,
 select:focus option:checked {
-  box-shadow: 0 0 10px 100px #c4b550 inset !important;
+  box-shadow: 0 0 10px 100px var(--secondary-accent) inset !important;
   color: #000 !important;
 }
 
@@ -229,8 +229,8 @@ select:focus option:checked {
 }
 
 .custom-option:hover {
-  background-color: #c4b550;
-  /* Golden yellow */
+  background-color: var(--secondary-accent);
+  /* Golden yellow from theme */
   color: black;
 }
 
