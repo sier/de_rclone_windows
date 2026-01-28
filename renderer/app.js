@@ -1167,21 +1167,31 @@ function createContextMenu(x, y, remote) {
   menu.style.left = x + 'px';
   menu.style.top = y + 'px';
   menu.style.zIndex = '10000';
-  menu.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-  menu.style.minWidth = '150px';
+  menu.style.boxShadow = '5px 5px 0px rgba(0,0,0,0.2)'; // CS 1.6 style shadow
+  menu.style.minWidth = '200px';
   menu.style.maxWidth = '250px';
+
+  // Determine cron action
+  const isCron = remote.cron === "Yes";
+  const cronAction = isCron ? "Remove from Startup" : "Add to Startup";
+  const cronIcon = isCron ? "⚡" : "⚡";
 
   // Create menu content with proper CS16 styling
   menu.innerHTML = `
     <div class="progress-body" style="padding: 5px 0;">
-      <div class="context-menu-item cs-btn" id="menu-edit" style="display: block; text-align: left; padding: 8px 12px; margin: 0; width: 100%; text-decoration: none; background-color: var(--bg); border: 1px solid var(--border-light) var(--border-dark) var(--border-dark) var(--border-light); cursor: pointer; transition: background-color 0.15s ease;"
-           onmouseover="this.style.backgroundColor='var(--secondary-bg)'"
-           onmouseout="this.style.backgroundColor='var(--bg)'">
+      <div class="context-menu-item cs-btn" id="menu-cron" style="display: block; text-align: left; padding: 8px 12px; margin: 0; width: 100%; text-decoration: none; background-color: var(--bg); border: 1px solid var(--border-light) var(--border-dark) var(--border-dark) var(--border-light); cursor: pointer;"
+           onmouseover="this.style.backgroundColor='var(--secondary-accent)'; this.style.color='black'"
+           onmouseout="this.style.backgroundColor='var(--bg)'; this.style.color='var(--text)'">
+        <span style="margin-right: 8px;">${cronIcon}</span>${cronAction}
+      </div>
+      <div class="context-menu-item cs-btn" id="menu-edit" style="display: block; text-align: left; padding: 8px 12px; margin: 0; width: 100%; text-decoration: none; background-color: var(--bg); border: 1px solid var(--border-light) var(--border-dark) var(--border-dark) var(--border-light); cursor: pointer;"
+           onmouseover="this.style.backgroundColor='var(--secondary-accent)'; this.style.color='black'"
+           onmouseout="this.style.backgroundColor='var(--bg)'; this.style.color='var(--text)'">
         <span style="margin-right: 8px;">✏️</span>Edit
       </div>
-      <div class="context-menu-item cs-btn" id="menu-delete" style="display: block; text-align: left; padding: 8px 12px; margin: 0; width: 100%; text-decoration: none; background-color: var(--bg); border: 1px solid var(--border-light) var(--border-dark) var(--border-dark) var(--border-light); cursor: pointer; transition: background-color 0.15s ease;"
-           onmouseover="this.style.backgroundColor='var(--secondary-bg)'"
-           onmouseout="this.style.backgroundColor='var(--bg)'">
+      <div class="context-menu-item cs-btn" id="menu-delete" style="display: block; text-align: left; padding: 8px 12px; margin: 0; width: 100%; text-decoration: none; background-color: var(--bg); border: 1px solid var(--border-light) var(--border-dark) var(--border-dark) var(--border-light); cursor: pointer;"
+           onmouseover="this.style.backgroundColor='var(--secondary-accent)'; this.style.color='black'"
+           onmouseout="this.style.backgroundColor='var(--bg)'; this.style.color='var(--text)'">
         <span style="margin-right: 8px;">🗑️</span>Delete
       </div>
     </div>
@@ -1190,6 +1200,30 @@ function createContextMenu(x, y, remote) {
   document.body.appendChild(menu);
 
   // Add event listeners to menu items
+  document.getElementById('menu-cron').addEventListener('click', async () => {
+    menu.remove();
+    try {
+      const action = isCron ? 'remove_from_cron' : 'add_to_cron';
+      const configPath = localStorage.getItem('rcloneConfigPath') || null;
+
+      showStatus(isCron ? "Removing from startup..." : "Adding to startup...", 'info');
+
+      const result = await invoke(action, {
+        remoteName: remote.name,
+        configPathOpt: configPath
+      });
+
+      if (result.success) {
+        showStatus(result.message, 'success');
+        await loadRemotes(); // Refresh table to show updated status
+      } else {
+        showGeneralModal('Error', result.message);
+      }
+    } catch (e) {
+      showGeneralModal('Error', `Operation failed: ${e.message || e}`);
+    }
+  });
+
   document.getElementById('menu-edit').addEventListener('click', () => {
     handleEditRemote(remote);
     menu.remove();
@@ -1529,43 +1563,43 @@ function setupCustomDropdown(containerId, hiddenInputId, onChangeCallback) {
 
   // Toggle dropdown
   trigger.addEventListener('click', (e) => {
-      e.stopPropagation();
-      // Close other open dropdowns
-      document.querySelectorAll('.custom-select-options').forEach(el => {
-          if (el !== optionsContainer) el.classList.remove('show');
-      });
-      optionsContainer.classList.toggle('show');
+    e.stopPropagation();
+    // Close other open dropdowns
+    document.querySelectorAll('.custom-select-options').forEach(el => {
+      if (el !== optionsContainer) el.classList.remove('show');
+    });
+    optionsContainer.classList.toggle('show');
   });
 
   // Handle option selection
   options.forEach(option => {
-      option.addEventListener('click', (e) => {
-          e.stopPropagation();
-          trigger.textContent = option.textContent;
-          const newVal = option.getAttribute('data-value');
-          
-          if (hiddenInput.value !== newVal) {
-              hiddenInput.value = newVal;
-              // Dispatch change event manually for compatibility
-              hiddenInput.dispatchEvent(new Event('change'));
-              
-              if (onChangeCallback) {
-                  onChangeCallback(newVal);
-              }
-          }
-          optionsContainer.classList.remove('show');
-      });
+    option.addEventListener('click', (e) => {
+      e.stopPropagation();
+      trigger.textContent = option.textContent;
+      const newVal = option.getAttribute('data-value');
+
+      if (hiddenInput.value !== newVal) {
+        hiddenInput.value = newVal;
+        // Dispatch change event manually for compatibility
+        hiddenInput.dispatchEvent(new Event('change'));
+
+        if (onChangeCallback) {
+          onChangeCallback(newVal);
+        }
+      }
+      optionsContainer.classList.remove('show');
+    });
   });
 
   // Close when clicking outside
   const closeListener = (e) => {
-      if (!document.body.contains(container)) {
-          window.removeEventListener('click', closeListener);
-          return;
-      }
-      if (!container.contains(e.target)) {
-          optionsContainer.classList.remove('show');
-      }
+    if (!document.body.contains(container)) {
+      window.removeEventListener('click', closeListener);
+      return;
+    }
+    if (!container.contains(e.target)) {
+      optionsContainer.classList.remove('show');
+    }
   };
   window.addEventListener('click', closeListener);
 }

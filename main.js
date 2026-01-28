@@ -111,12 +111,13 @@ ipcMain.handle('get_remotes', async (event, { configPathOpt }) => {
         }
 
         // Populate cron status
-        // We'll filter remotes and check crontab in one go usually, but here iterating is fine or caching it
         try {
             const { stdout } = await execPromise('crontab -l');
             remotes.forEach(r => {
-                const cmd = `rclone mount --vfs-cache-mode writes ${r.name}:`;
-                if (stdout.includes(cmd)) {
+                // Check using the core identifier: rclone mount remoteName: mountDir
+                const mountPoint = getMountDir(r.name);
+                const ident = `rclone mount ${r.name}: "${mountPoint}"`;
+                if (stdout.includes(ident)) {
                     r.cron = "Yes";
                 }
             });
@@ -297,6 +298,96 @@ ipcMain.handle('get_available_plugins', async () => {
 });
 
 // --- Cron Functions ---
+
+function getMountCmdString(remoteName, mountPoint, configPath) {
+    // Construct the exact command line used for cron
+    // We use full path for safety if possible, but 'rclone' is standard
+    let cmd = `rclone mount ${remoteName}: "${mountPoint}" --vfs-cache-mode writes --daemon`;
+    if (configPath) {
+        cmd += ` --config "${configPath}"`;
+    }
+    return cmd;
+}
+
+ipcMain.handle('add_to_cron', async (event, { remoteName, configPathOpt }) => {
+    try {
+        const mountPoint = getMountDir(remoteName);
+        const configPath = getRcloneConfigPath(configPathOpt);
+        const cmd = getMountCmdString(remoteName, mountPoint, configPath);
+        const cronEntry = `@reboot ${cmd}`;
+
+        // Check if already exists
+        const list = await execPromise('crontab -l').catch(() => ({ stdout: '' }));
+        if (list.stdout.includes(cmd)) {
+            return { success: true, message: `${remoteName} is already in startup (cron).` };
+        }
+
+        // Add to crontab
+        // Use printf to handle newlines correctly, avoiding echo execution issues
+        // We append the new line
+        await execPromise(`(crontab -l 2>/dev/null; echo "${cronEntry}") | crontab -`);
+
+        return { success: true, message: `Added ${remoteName} to startup.` };
+    } catch (e) {
+        return { success: false, message: `Failed to add to startup: ${e.stderr || e.message}` };
+    }
+});
+
+ipcMain.handle('remove_from_cron', async (event, { remoteName, configPathOpt }) => {
+    try {
+        const mountPoint = getMountDir(remoteName);
+        // We need to match the command part mainly to identify the line
+        // Depending on config path, the string might vary, so we should try to match the remote and mountpoint
+        // Robust way: filter lines containing `rclone mount remoteName: mountPoint`
+
+        // However, getMountCmdString returns the exact string we expect.
+        const configPath = getRcloneConfigPath(configPathOpt);
+        // We construct the core identifying part of the command
+        const ident = `rclone mount ${remoteName}: "${mountPoint}"`;
+
+        const list = await execPromise('crontab -l').catch(() => ({ stdout: '' }));
+        if (!list.stdout.includes(ident)) {
+            return { success: true, message: `${remoteName} is not in startup.` };
+        }
+
+        // Remove lines containing the unique identifier
+        // grep -v "rclone mount remoteName: mountPoint"
+        // Need to escape special chars if any, but remoteName and mountPoint are paths/names
+
+        // Escape check for safety? simple approach:
+        const tempFile = path.join(os.tmpdir(), `cron_${Date.now()}`);
+        fs.writeFileSync(tempFile, list.stdout);
+
+        const content = fs.readFileSync(tempFile, 'utf8');
+        const lines = content.split('\n');
+        const newLines = lines.filter(line => !line.includes(ident) && line.trim() !== '');
+
+        const newContent = newLines.join('\n') + (newLines.length > 0 ? '\n' : '');
+
+        // Write back
+        // We can pass string to crontab - 
+        // But passing newContent via stdin to exec might be tricky with escaping.
+        // let's use the temp file approach for safety or just carefully construct pipe
+
+        // Easier:
+        // (crontab -l | grep -v "FIXME") | crontab -
+        // But grep regex might be annoying.
+
+        // Let's use the node filtering result.
+        const filteredCmd = `echo "${newLines.join('\n').replace(/"/g, '\\"')}" | crontab -`;
+        // Wait, multiple lines echo might fail depending on shell.
+        // Better: write to temporary file, load from it, delete it.
+
+        fs.writeFileSync(tempFile, newContent);
+        await execPromise(`crontab "${tempFile}"`);
+        fs.unlinkSync(tempFile);
+
+        return { success: true, message: `Removed ${remoteName} from startup.` };
+
+    } catch (e) {
+        return { success: false, message: `Failed to remove from startup: ${e.stderr || e.message}` };
+    }
+});
 
 async function getCrontab() {
     try {
