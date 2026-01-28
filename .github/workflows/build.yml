@@ -3,7 +3,12 @@ name: Build AppImage
 on:
   push:
     branches: [ "main", "master" ]
+  release:
+    types: [ published ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -23,11 +28,11 @@ jobs:
       run: |
         npm ci
         
-    - name: Build AppImage
+    - name: Build and Publish AppImage
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        npm run dist -- --linux AppImage
+        npm run dist -- --linux AppImage -p always
         
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
