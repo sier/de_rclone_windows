@@ -41,20 +41,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Initialize Tauri API functions properly for v2
 function initializeTauriAPI() {
-  // Tauri v2 uses global APIs that are available in the window object
-  if (window.__TAURI_INVOKE__) {
-    console.log("Tauri v2 API available via __TAURI_INVOKE__");
-    invoke = window.__TAURI_INVOKE__;
-  } else if (typeof window.tauri !== 'undefined' && window.tauri.invoke) {
-    // Alternative Tauri v2 approach
-    console.log("Tauri API available via window.tauri");
-    invoke = window.tauri.invoke;
-  } else if (window.__TAURI_INTERNALS__?.invoke) {
-    console.log("Tauri API available via __TAURI_INTERNALS__");
-    invoke = window.__TAURI_INTERNALS__.invoke;
+  // Check for Electron API
+  if (window.api && window.api.invoke) {
+    console.log("Electron API available via window.api");
+    invoke = window.api.invoke;
   } else {
-    console.error("Tauri APIs not found in global scope!");
-    console.log("Available globals:", Object.keys(window).filter(key => key.includes('TAURI')));
+    console.error("Electron API not found in global scope!");
 
     // Mock functions as fallback for testing
     invoke = async (cmd, args) => {
