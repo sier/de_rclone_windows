@@ -76,15 +76,14 @@ ipcMain.handle('get_remotes', async (event, { configPathOpt }) => {
                 // Save previous remote
                 if (currentSection && currentType) {
                     const mountPoint = getMountDir(currentSection);
-                    const isMounted = fs.existsSync(mountPoint) && fs.statSync(mountPoint).isDirectory();
-                    // Note: Ideally check if it's a mountpoint, but directory check is a basic fallback
-                    // We can improve isMounted check later
+                    // Use robust check
+                    const mounted = await isMounted(mountPoint);
 
                     remotes.push({
                         name: currentSection,
                         type: currentType,
-                        mounted: isMounted ? "Yes" : "No",
-                        cron: "No", // TODO: Implement cron check
+                        mounted: mounted ? "Yes" : "No",
+                        cron: "No", // Configured later
                         mount_point: mountPoint
                     });
                 }
@@ -101,11 +100,11 @@ ipcMain.handle('get_remotes', async (event, { configPathOpt }) => {
         // Add last one
         if (currentSection && currentType) {
             const mountPoint = getMountDir(currentSection);
-            const isMounted = fs.existsSync(mountPoint) && fs.statSync(mountPoint).isDirectory();
+            const mounted = await isMounted(mountPoint);
             remotes.push({
                 name: currentSection,
                 type: currentType,
-                mounted: isMounted ? "Yes" : "No",
+                mounted: mounted ? "Yes" : "No",
                 cron: "No",
                 mount_point: mountPoint
             });
@@ -214,16 +213,24 @@ ipcMain.handle('unmount_remote', async (event, { remoteName }) => {
     const mountPoint = getMountDir(remoteName);
 
     if (!(await isMounted(mountPoint))) {
-        return { success: true, message: `${remoteName} is not mounted` };
+        // Try cleanup if directory exists but not mounted (stale state)
+        if (fs.existsSync(mountPoint)) {
+            try { fs.rmdirSync(mountPoint); } catch (e) { }
+        }
+        return { success: false, message: `${remoteName} is not mounted.` };
     }
 
     try {
         await execPromise(`fusermount -u "${mountPoint}"`);
+        // Clean up point
+        try { if (fs.existsSync(mountPoint)) fs.rmdirSync(mountPoint); } catch (e) { }
         return { success: true, message: `Successfully unmounted ${remoteName}` };
     } catch (e) {
         // Fallback to umount
         try {
             await execPromise(`umount "${mountPoint}"`);
+            // Clean up point
+            try { if (fs.existsSync(mountPoint)) fs.rmdirSync(mountPoint); } catch (e) { }
             return { success: true, message: `Successfully unmounted ${remoteName}` };
         } catch (e2) {
             return { success: false, message: `Unmount failed: ${e.stderr || e.message}` };

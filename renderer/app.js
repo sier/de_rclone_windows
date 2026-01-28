@@ -203,11 +203,12 @@ async function renderRemotesTable(remotes) {
     row.addEventListener('click', () => {
       // Remove selection from other rows
       document.querySelectorAll('#remote-table-body tr').forEach(r => {
+        r.classList.remove('selected-row');
         r.style.backgroundColor = '';
       });
 
-      // Highlight selected row with more golden color
-      row.style.backgroundColor = 'var(--secondary-accent)';
+      // Highlight selected row with class
+      row.classList.add('selected-row');
       selectedRemote = remote;
       updateButtonStates(remote);
     });
@@ -218,11 +219,12 @@ async function renderRemotesTable(remotes) {
 
       // Remove selection from other rows
       document.querySelectorAll('#remote-table-body tr').forEach(r => {
+        r.classList.remove('selected-row');
         r.style.backgroundColor = '';
       });
 
-      // Highlight selected row with more golden color
-      row.style.backgroundColor = 'var(--secondary-accent)';
+      // Highlight selected row with class
+      row.classList.add('selected-row');
       selectedRemote = remote;
       updateButtonStates(remote);
 
