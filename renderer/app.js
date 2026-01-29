@@ -33,9 +33,27 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
 
   // Load version
+  // Load version
   invoke('get_app_version').then(version => {
     const el = document.getElementById('app-version');
-    if (el) el.textContent = `v${version}`;
+    if (el) {
+      el.textContent = `v${version}`;
+      el.addEventListener('click', () => {
+        const aboutContent = `
+          <div style="text-align: center;">
+            <p style="font-weight: bold; margin-bottom: 10px;">de_rclone manager v${version}</p>
+            <p style="margin-bottom: 15px;">A robust Rclone GUI manager built with Electron.</p>
+            <p>
+              <a href="#" onclick="window.api.shell.openExternal('https://github.com/madroots/de_rclone')" style="color: var(--accent); text-decoration: none;">GitHub Repository</a>
+            </p>
+            <p>
+              <a href="#" onclick="window.api.shell.openExternal('https://github.com/ekmas/cs16.css')" style="color: var(--accent); text-decoration: none;">CS 1.6 CSS Framework</a>
+            </p>
+          </div>
+        `;
+        showGeneralModal('About de_rclone', aboutContent);
+      });
+    }
   }).catch(e => console.error("Failed to load version", e));
 
   // Load remotes

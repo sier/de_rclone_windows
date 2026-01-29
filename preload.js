@@ -2,7 +2,9 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
     invoke: (channel, data) => ipcRenderer.invoke(channel, data),
-    // Add other necessary APIs here if needed, but 'invoke' should cover most Tauri porting
+    shell: {
+        openExternal: (url) => ipcRenderer.invoke('open_external', url)
+    }
 });
 
 // Also expose a flag to let the frontend know it's running in Electron

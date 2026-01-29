@@ -255,6 +255,10 @@ ipcMain.handle('open_folder', async (event, { path: folderPath }) => {
     return { success: true, message: `Opened folder: ${folderPath}` };
 });
 
+ipcMain.handle('open_external', async (event, url) => {
+    await shell.openExternal(url);
+});
+
 ipcMain.handle('test_connection', async (event, { remoteName, configPathOpt }) => {
     const configPath = getRcloneConfigPath(configPathOpt);
     try {
