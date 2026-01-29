@@ -1248,7 +1248,7 @@ function createContextMenu(x, y, remote) {
   // Determine cron action
   const isCron = remote.cron === "Yes";
   const cronAction = isCron ? "Disable auto-mount" : "Enable auto-mount";
-  const cronIcon = isCron ? "⚡" : "⚡";
+  const cronIcon = isCron ? '<img src="cron_icon.svg" style="width: 16px; height: 16px; vertical-align: bottom; margin-right: 8px;">' : '<img src="cron_icon.svg" style="width: 16px; height: 16px; vertical-align: bottom; margin-right: 8px; opacity: 0.5;">';
 
   // Create menu content with proper CS16 styling
   menu.innerHTML = `
@@ -1256,17 +1256,17 @@ function createContextMenu(x, y, remote) {
       <div class="context-menu-item cs-btn" id="menu-cron" style="display: block; text-align: left; padding: 8px 12px; margin: 0; width: 100%; text-decoration: none; background-color: var(--bg); border: 1px solid var(--border-light) var(--border-dark) var(--border-dark) var(--border-light); cursor: pointer;"
            onmouseover="this.style.backgroundColor='var(--secondary-accent)'; this.style.color='black'"
            onmouseout="this.style.backgroundColor='var(--bg)'; this.style.color='var(--text)'">
-        <span style="margin-right: 8px;">${cronIcon}</span>${cronAction}
+        ${cronIcon}${cronAction}
       </div>
       <div class="context-menu-item cs-btn" id="menu-edit" style="display: block; text-align: left; padding: 8px 12px; margin: 0; width: 100%; text-decoration: none; background-color: var(--bg); border: 1px solid var(--border-light) var(--border-dark) var(--border-dark) var(--border-light); cursor: pointer;"
            onmouseover="this.style.backgroundColor='var(--secondary-accent)'; this.style.color='black'"
            onmouseout="this.style.backgroundColor='var(--bg)'; this.style.color='var(--text)'">
-        <span style="margin-right: 8px;">✏️</span>Edit
+        <img src="edit_icon.svg" style="width: 16px; height: 16px; vertical-align: bottom; margin-right: 8px;">Edit
       </div>
       <div class="context-menu-item cs-btn" id="menu-delete" style="display: block; text-align: left; padding: 8px 12px; margin: 0; width: 100%; text-decoration: none; background-color: var(--bg); border: 1px solid var(--border-light) var(--border-dark) var(--border-dark) var(--border-light); cursor: pointer;"
            onmouseover="this.style.backgroundColor='var(--secondary-accent)'; this.style.color='black'"
            onmouseout="this.style.backgroundColor='var(--bg)'; this.style.color='var(--text)'">
-        <span style="margin-right: 8px;">🗑️</span>Delete
+        <img src="delete_icon.svg" style="width: 16px; height: 16px; vertical-align: bottom; margin-right: 8px;">Delete
       </div>
     </div>
   `;
