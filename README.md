@@ -65,11 +65,6 @@ To take advantage of an update mechanism of Gear Lever and update de_rclone auto
     ```
 ## Prerequisites
 *   **Rclone**: You must have `rclone` installed on your system.
-    ```bash
-    sudo apt install rclone  # Debian/Ubuntu
-    sudo pacman -S rclone    # Arch
-    sudo zypper in rclone    # OpenSUSE
-    ```
 *   **FUSE**: Required for mounting drives (usually pre-installed on most distros).
 ---
 ## Credits
