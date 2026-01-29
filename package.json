@@ -1,6 +1,6 @@
 {
   "name": "de_rclone",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Rclone GUI Manager",
   "main": "main.js",
   "scripts": {
