@@ -34,6 +34,14 @@ A robust, retro-styled GUI manager for **Rclone**, styled with the nostalgic CS 
 
 ## Quick Start
 
+### "Just run the damn .EXE!"
+Okok, Windows very gud yes.
+1. Go to https://github.com/sier/de_rclone_windows/releases
+2. Download the .zip file
+3. Right-click and extract it in your Downloads folder.
+4. Run the installer by double-clicking "de_rclone_installer.exe"
+5. Note that I take absolutely no responsibility for how well the application functions, I just made this Windows build and installer to make it easier for peeps like you to run it.
+
 ### Recommended: Gear Lever
 
 **[Gear Lever](https://github.com/mijorus/gearlever)** is the recommended way to manage your AppImages.  
@@ -113,6 +121,15 @@ This creates a `.AppImage` file in the `dist/` directory.
 npm run dist
 ```
 This creates an unpacked directory in `dist/` containing the executable and all files. Run `de_rclone.exe` from within this directory.
+
+##### Windows Installer
+###### Prerequisites
+- [NSIS](https://nsis.sourceforge.io/Download)
+After compiling the Electron project, run the following to package it (make sure you are in the root directory):
+```bash
+"C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi
+```
+
 
 **Note**: Using "dir" target skips packaging and code signing entirely, avoiding the symlink permission issues. The unpacked app runs identically to a packaged version.
 
