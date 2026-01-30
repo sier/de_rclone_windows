@@ -3,6 +3,10 @@
   "version": "1.2.6",
   "description": "Rclone GUI Manager",
   "main": "main.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/madroots/de_rclone.git"
+  },
   "scripts": {
     "start": "electron .",
     "pack": "electron-builder --dir",
