@@ -48,12 +48,10 @@ jobs:
       with:
         name: de_rclone ${{ github.ref_name }}
         body: |
-          # New Features
-          - **Stuff here** 
+          # Changes
 
-          # Bug Fixes
+          - **Added About section with credits** 
           - **small fixes**
         draft: true
         prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}
