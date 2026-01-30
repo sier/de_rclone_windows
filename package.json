@@ -27,6 +27,13 @@
     "files": [
       "**/*",
       "renderer/**/*"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "madroots",
+        "repo": "de_rclone"
+      }
     ]
   }
 }
