@@ -35,9 +35,5 @@
         "repo": "de_rclone"
       }
     ],
-    "releaseInfo": {
-      "releaseName": "de_rclone v${version}",
-      "releaseNotes": "# New Features\n\n- **Stuff here**\n\n# Bug Fixes\n\n- **small fixes**"
-    }
   }
 }
