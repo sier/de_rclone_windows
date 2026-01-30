@@ -1,6 +1,6 @@
 {
   "name": "de_rclone",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "Rclone GUI Manager",
   "main": "main.js",
   "scripts": {
@@ -28,12 +28,12 @@
       "**/*",
       "renderer/**/*"
     ],
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "madroots",
-        "repo": "de_rclone"
-      }
-    ]
+    "repo": "de_rclone"
   }
+],
+"releaseInfo": {
+  "releaseName": "de_rclone v${version}",
+  "releaseNotes": "# New Features\n\n- **Stuff here**\n\n# Bug Fixes\n\n- **small fixes**"
+}
+}
 }
