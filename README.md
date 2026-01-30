@@ -108,13 +108,13 @@ npm run dist
 ```
 This creates a `.AppImage` file in the `dist/` directory.
 
-#### Windows (Portable Executable)
+#### Windows (Unpacked Directory)
 ```bash
 npm run dist
 ```
-This creates a portable `.exe` file in the `dist/` directory.
+This creates an unpacked directory in `dist/` containing the executable and all files. Run `de_rclone.exe` from within this directory.
 
-**Note**: Code signing is disabled for Windows builds. If you encounter issues with symbolic links during build (common on non-admin accounts), the application runs fine in development mode with `npm start`. For production builds, run the build command with administrator privileges or in an environment that supports symbolic links.
+**Note**: Using "dir" target skips packaging and code signing entirely, avoiding the symlink permission issues. The unpacked app runs identically to a packaged version.
 
 ### Platform-Specific Notes
 - On Windows, rclone config is expected at `%APPDATA%\rclone\rclone.conf`
