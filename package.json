@@ -28,6 +28,9 @@
       "category": "Utility",
       "icon": "icon.png"
     },
+    "win": {
+      "target": "dir"
+    },
     "files": [
       "**/*",
       "renderer/**/*"

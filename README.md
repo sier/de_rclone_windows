@@ -1,6 +1,6 @@
 # de_rclone
 
-A robust, retro-styled GUI manager for **Rclone**, styled with the nostalgic CS 1.6 aesthetic, distributed as AppImage.
+A robust, retro-styled GUI manager for **Rclone**, styled with the nostalgic CS 1.6 aesthetic, distributed as AppImage for Linux and portable executable for Windows.
 
 <img width="600" height="453" alt="36ec6d25-e185-4239-abfd-f187bb955959_removalai_preview" src="https://github.com/user-attachments/assets/eeffd72b-265c-4de5-b404-163d40e59d85" />
 
@@ -27,12 +27,20 @@ A robust, retro-styled GUI manager for **Rclone**, styled with the nostalgic CS 
 - **Retro Aesthetics**  
   Nostalgic, fully themed UI based on the classic Counter-Strike 1.6 look.
 
-- **Linux Native**  
-  Optimized for Linux with AppImage distribution.
+- **Cross-Platform**  
+  Supports Linux (AppImage) and Windows (portable executable).
 
 ---
 
 ## Quick Start
+
+### "Just run the damn .EXE!"
+Okok, Windows very gud yes.
+1. Go to https://github.com/sier/de_rclone_windows/releases
+2. Download the .zip file
+3. Right-click and extract it in your Downloads folder.
+4. Run the installer by double-clicking "de_rclone_installer.exe"
+5. Note that I take absolutely no responsibility for how well the application functions, I just made this Windows build and installer to make it easier for peeps like you to run it.
 
 ### Recommended: Gear Lever
 
@@ -63,12 +71,77 @@ To take advantage of an update mechanism of Gear Lever and update de_rclone auto
     ```bash
     ./de_rclone-*.AppImage
     ```
+
+### Windows
+
+1. Download the latest `.exe` from the [Releases](https://github.com/sier/de_rclone_windows/releases) page.
+2. Extract the portable executable (if zipped).
+3. Run `de_rclone.exe`.
+
 ## Prerequisites
 *   **Rclone**: You must have `rclone` installed on your system.
-*   **FUSE**: Required for mounting drives (usually pre-installed on most distros).
+*   **FUSE (Linux)**: Required for mounting drives (usually pre-installed on most distros).
+*   **Mounting on Windows**: Mounting is not supported yet; requires additional setup with WinFsp/Dokany.
+---
+## Development
+
+### Prerequisites
+- Node.js (v16 or higher)
+- npm
+- Git
+
+### Setup Development Environment
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/madroots/de_rclone.git
+   cd de_rclone
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Run in development mode:
+   ```bash
+   npm start
+   ```
+
+### Building for Distribution
+
+#### Linux (AppImage)
+```bash
+npm run dist
+```
+This creates a `.AppImage` file in the `dist/` directory.
+
+#### Windows (Unpacked Directory)
+```bash
+npm run dist
+```
+This creates an unpacked directory in `dist/` containing the executable and all files. Run `de_rclone.exe` from within this directory.
+
+##### Windows Installer
+###### Prerequisites
+- [NSIS](https://nsis.sourceforge.io/Download)
+After compiling the Electron project, run the following to package it (make sure you are in the root directory):
+```bash
+"C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi
+```
+
+
+**Note**: Using "dir" target skips packaging and code signing entirely, avoiding the symlink permission issues. The unpacked app runs identically to a packaged version.
+
+### Platform-Specific Notes
+- On Windows, rclone config is expected at `%APPDATA%\rclone\rclone.conf`
+- Mounting functionality is disabled on Windows (Linux-only feature)
+- Auto-mount (cron) is disabled on Windows (Linux-only feature)
+
 ---
 ## Credits
 *   **Development**: [madroots](https://github.com/madroots)
 *   **UI Framework**: [CS 1.6 CSS](https://github.com/ekmas/cs16.css) by ekmas
+*   **Windows Build**: [sier](https://github.com/sier)
 ---
 *Counter-Terrorists Win.*
