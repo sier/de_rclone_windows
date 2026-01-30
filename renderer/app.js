@@ -168,7 +168,7 @@ async function loadRemotes() {
       showStatus("rclone.conf not found. Select it from settings or add a new remote to create it.", 'warning', false); // Yellow and doesn't auto-reset
       defaultStatusMessage = "rclone.conf not found. Select it from settings or add a new remote to create it."; // Keep this as the persistent message
     } else if (errorMessage && errorMessage.includes("Failed to read config")) {
-      showStatus("Could not read rclone config. Check ~/.config/rclone/rclone.conf", 'warning', false); // Yellow and doesn't auto-reset
+      showStatus("Could not read rclone config. Check your rclone config file.", 'warning', false); // Yellow and doesn't auto-reset
     }
   }
 }
@@ -188,7 +188,7 @@ async function renderRemotesTable(remotes) {
   // Update the "No remotes" message to account for the new column
   if (!remotes || remotes.length === 0) {
     const row = document.createElement('tr');
-    row.innerHTML = '<td colspan="7" style="text-align: center; padding: 0px;">No remotes configured. Please configure rclone remotes in ~/.config/rclone/rclone.conf</td>';
+    row.innerHTML = '<td colspan="7" style="text-align: center; padding: 0px;">No remotes configured. Please configure rclone remotes in your rclone config file.</td>';
     remoteTableBody.appendChild(row);
     return;
   }

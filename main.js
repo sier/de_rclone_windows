@@ -48,7 +48,11 @@ function expandTilde(filePath) {
 
 function getRcloneConfigPath(customPath) {
     if (customPath) return expandTilde(customPath);
-    return path.join(os.homedir(), '.config', 'rclone', 'rclone.conf');
+    if (process.platform === 'win32') {
+        return path.join(os.homedir(), 'AppData', 'Roaming', 'rclone', 'rclone.conf');
+    } else {
+        return path.join(os.homedir(), '.config', 'rclone', 'rclone.conf');
+    }
 }
 
 function getMountDir(remoteName) {
@@ -114,23 +118,25 @@ ipcMain.handle('get_remotes', async (event, { configPathOpt }) => {
         }
 
         // Populate cron status
-        try {
-            const { stdout } = await execPromise('crontab -l');
-            remotes.forEach(r => {
-                // Relaxed check: rclone mount ... remoteName: ...
-                // We check if the line contains "rclone mount" and "remoteName:"
-                // This covers manual entries with different flags or quoting
-                const lines = stdout.split('\n');
-                const isCron = lines.some(line => {
-                    return line.includes('rclone mount') && line.includes(`${r.name}:`);
-                });
+        if (process.platform !== 'win32') {
+            try {
+                const { stdout } = await execPromise('crontab -l');
+                remotes.forEach(r => {
+                    // Relaxed check: rclone mount ... remoteName: ...
+                    // We check if the line contains "rclone mount" and "remoteName:"
+                    // This covers manual entries with different flags or quoting
+                    const lines = stdout.split('\n');
+                    const isCron = lines.some(line => {
+                        return line.includes('rclone mount') && line.includes(`${r.name}:`);
+                    });
 
-                if (isCron) {
-                    r.cron = "Yes";
-                }
-            });
-        } catch (e) {
-            // Crontab might be empty or fail
+                    if (isCron) {
+                        r.cron = "Yes";
+                    }
+                });
+            } catch (e) {
+                // Crontab might be empty or fail
+            }
         }
 
         return remotes;
@@ -163,6 +169,10 @@ function isMounted(mountPoint) {
 }
 
 ipcMain.handle('mount_remote', async (event, { remoteName, configPathOpt }) => {
+    if (process.platform === 'win32') {
+        return { success: false, message: 'Mounting is not supported on Windows yet.' };
+    }
+
     const mountPoint = getMountDir(remoteName);
 
     // Check if mounted
@@ -219,6 +229,10 @@ ipcMain.handle('mount_remote', async (event, { remoteName, configPathOpt }) => {
 });
 
 ipcMain.handle('unmount_remote', async (event, { remoteName }) => {
+    if (process.platform === 'win32') {
+        return { success: false, message: 'Unmounting is not supported on Windows yet.' };
+    }
+
     const mountPoint = getMountDir(remoteName);
 
     if (!(await isMounted(mountPoint))) {
@@ -357,6 +371,10 @@ function getMountCmdString(remoteName, mountPoint, configPath) {
 }
 
 ipcMain.handle('add_to_cron', async (event, { remoteName, configPathOpt }) => {
+    if (process.platform === 'win32') {
+        return { success: false, message: 'Auto-mount (cron) is not supported on Windows yet.' };
+    }
+
     try {
         const mountPoint = getMountDir(remoteName);
         const configPath = getRcloneConfigPath(configPathOpt);
@@ -380,6 +398,10 @@ ipcMain.handle('add_to_cron', async (event, { remoteName, configPathOpt }) => {
 });
 
 ipcMain.handle('remove_from_cron', async (event, { remoteName, configPathOpt }) => {
+    if (process.platform === 'win32') {
+        return { success: false, message: 'Auto-mount (cron) is not supported on Windows yet.' };
+    }
+
     try {
         const list = await execPromise('crontab -l').catch(() => ({ stdout: '' }));
 

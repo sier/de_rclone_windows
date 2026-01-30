@@ -28,6 +28,14 @@
       "category": "Utility",
       "icon": "icon.png"
     },
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "icon": "icon.png",
+      "sign": false,
+      "certificateFile": null
+    },
     "files": [
       "**/*",
       "renderer/**/*"
