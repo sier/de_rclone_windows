@@ -31,6 +31,12 @@
     "win": {
       "target": "dir"
     },
+    "nsis": {
+      "script": "installer.nsi",
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true
+    },
     "files": [
       "**/*",
       "renderer/**/*"

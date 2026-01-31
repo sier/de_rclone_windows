@@ -74,13 +74,16 @@ To take advantage of an update mechanism of Gear Lever and update de_rclone auto
 
 ### Windows
 
-1. Download the latest `.exe` from the [Releases](https://github.com/sier/de_rclone_windows/releases) page.
-2. Extract the portable executable (if zipped).
-3. Run `de_rclone.exe`.
+1. Download the latest installer (`.exe`) from the [Releases](https://github.com/madroots/de_rclone/releases) page.
+2. Run the installer - select "Full Installation" to automatically download and install rclone and WinFsp.
+3. Launch de_rclone from the desktop shortcut.
+
+**Note**: The installer offers optional components to automatically download and install rclone and WinFsp. Rclone will be installed in the same directory as the application for reliable operation. WinFsp will be installed system-wide.
 
 ## Prerequisites
 *   **Rclone**: You must have `rclone` installed on your system.
 *   **FUSE (Linux)**: Required for mounting drives (usually pre-installed on most distros).
+*   **WinFsp (Windows)**: Required for mounting drives on Windows. Download from https://winfsp.dev/
 *   **Mounting on Windows**: Mounting is not supported yet; requires additional setup with WinFsp/Dokany.
 ---
 ## Development
@@ -135,8 +138,8 @@ After compiling the Electron project, run the following to package it (make sure
 
 ### Platform-Specific Notes
 - On Windows, rclone config is expected at `%APPDATA%\rclone\rclone.conf`
-- Mounting functionality is disabled on Windows (Linux-only feature)
-- Auto-mount (cron) is disabled on Windows (Linux-only feature)
+- Mounting requires WinFsp to be installed on Windows
+- Auto-mount (cron) is not supported on Windows (Linux-only feature)
 
 ---
 ## Credits

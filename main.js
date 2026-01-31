@@ -6,6 +6,18 @@ const os = require('os');
 
 let mainWindow;
 
+// Helper function to get rclone executable path
+function getRclonePath() {
+    // First check if rclone.exe exists in the same directory as the app
+    const appDir = path.dirname(process.execPath);
+    const rclonePath = path.join(appDir, 'rclone.exe');
+    if (fs.existsSync(rclonePath)) {
+        return rclonePath;
+    }
+    // Fallback to PATH
+    return 'rclone';
+}
+
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 800,
@@ -26,6 +38,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+    console.log("Current PATH:", process.env.PATH);
     createWindow();
 
     app.on('activate', () => {
@@ -161,18 +174,45 @@ function execPromise(command) {
 
 function isMounted(mountPoint) {
     return new Promise(resolve => {
-        exec(`mountpoint -q "${mountPoint}"`, (err) => {
-            if (err) resolve(false); // standard way to check mountpoint in linux
-            else resolve(true);
-        });
+        if (process.platform === 'win32') {
+            // On Windows, check if rclone mount process is running for this mount point
+            exec(`tasklist /fi "IMAGENAME eq rclone.exe" /fo csv /nh`, (err, stdout) => {
+                if (err) {
+                    resolve(false);
+                    return;
+                }
+
+                // Check if any rclone process has our mount point in command line
+                const lines = stdout.split('\n');
+                const mountPointNormalized = mountPoint.replace(/\\/g, '\\\\');
+                const isRcloneRunning = lines.some(line => {
+                    return line.toLowerCase().includes('rclone.exe') &&
+                           line.includes('mount') &&
+                           line.includes(mountPointNormalized);
+                });
+
+                if (isRcloneRunning) {
+                    // Additional check: try to access the mount point
+                    try {
+                        fs.accessSync(mountPoint, fs.constants.R_OK);
+                        resolve(true);
+                    } catch (e) {
+                        resolve(false);
+                    }
+                } else {
+                    resolve(false);
+                }
+            });
+        } else {
+            exec(`mountpoint -q "${mountPoint}"`, (err) => {
+                if (err) resolve(false);
+                else resolve(true);
+            });
+        }
     });
 }
 
 ipcMain.handle('mount_remote', async (event, { remoteName, configPathOpt }) => {
-    if (process.platform === 'win32') {
-        return { success: false, message: 'Mounting is not supported on Windows yet.' };
-    }
-
     const mountPoint = getMountDir(remoteName);
 
     // Check if mounted
@@ -180,8 +220,26 @@ ipcMain.handle('mount_remote', async (event, { remoteName, configPathOpt }) => {
         return { success: true, message: `${remoteName} is already mounted at ${mountPoint}` };
     }
 
-    if (!fs.existsSync(mountPoint)) {
-        fs.mkdirSync(mountPoint, { recursive: true });
+    // On Windows, rclone mount requires the mount point directory to NOT exist
+    // On Linux/macOS, the directory should exist
+    if (process.platform !== 'win32') {
+        if (!fs.existsSync(mountPoint)) {
+            fs.mkdirSync(mountPoint, { recursive: true });
+        }
+    } else {
+        // On Windows, remove the directory if it exists so rclone can create it
+        if (fs.existsSync(mountPoint)) {
+            try {
+                fs.rmdirSync(mountPoint);
+            } catch (e) {
+                // Directory might not be empty, try to remove contents
+                try {
+                    fs.rmSync(mountPoint, { recursive: true, force: true });
+                } catch (e2) {
+                    // If we can't remove it, the mount will likely fail
+                }
+            }
+        }
     }
 
     const configPath = getRcloneConfigPath(configPathOpt);
@@ -195,44 +253,69 @@ ipcMain.handle('mount_remote', async (event, { remoteName, configPathOpt }) => {
         '--vfs-cache-mode', 'writes',
         '--daemon'
     ];
+
+    // Add Windows-specific arguments for better WinFsp compatibility
+    if (process.platform === 'win32') {
+        args.push('--vfs-cache-max-age', '1h');
+        args.push('--vfs-cache-max-size', '100M');
+        args.push('--log-level', 'INFO');
+        args.push('--log-file', path.join(os.tmpdir(), `rclone-mount-${remoteName}.log`));
+    }
+
     if (configPathOpt) {
         args.push('--config', configPath);
     }
 
     return new Promise((resolve, reject) => {
-        // Using spawn specifically for rclone to detach? 
-        // Actually, normal exec with --daemon should work, but spawn is safer for long running
-        // However, --daemon flag makes rclone fork itself.
+        // Capture output to see any errors
+        const child = spawn(getRclonePath(), args, {
+            stdio: ['ignore', 'pipe', 'pipe'],
+            detached: true,
+            shell: true
+        });
 
-        const child = spawn('rclone', args, { stdio: 'ignore', detached: true });
+        let stderr = '';
+        let stdout = '';
+
+        if (child.stdout) {
+            child.stdout.on('data', (data) => {
+                stdout += data.toString();
+            });
+        }
+
+        if (child.stderr) {
+            child.stderr.on('data', (data) => {
+                stderr += data.toString();
+            });
+        }
 
         child.on('error', (err) => {
             return resolve({ success: false, message: `Failed to start rclone: ${err.message}` });
         });
 
+        child.on('exit', (code) => {
+            if (code !== 0 && code !== null) {
+                return resolve({ success: false, message: `Rclone exited with code ${code}: ${stderr}` });
+            }
+        });
+
         child.unref();
 
-        // We wait a bit to see if it mounts? Or just assume success if it triggered?
-        // rclone --daemon returns quickly.
+        // Wait longer on Windows for mount to establish
+        const waitTime = process.platform === 'win32' ? 3000 : 1000;
 
         setTimeout(async () => {
             if (await isMounted(mountPoint)) {
                 resolve({ success: true, message: `Successfully mounted ${remoteName} at ${mountPoint}` });
             } else {
-                // Check if it's just slow or failed silently.
-                // Ideally capture output before detaching, but --daemon suppresses it usually.
-                // Let's rely on mountpoint check.
-                resolve({ success: false, message: `Mount command executed but mountpoint not detected yet. Check logs.` });
+                const errorMsg = stderr || 'Unknown error';
+                resolve({ success: false, message: `Mount command executed but mountpoint not detected. Error: ${errorMsg}` });
             }
-        }, 1000);
+        }, waitTime);
     });
 });
 
 ipcMain.handle('unmount_remote', async (event, { remoteName }) => {
-    if (process.platform === 'win32') {
-        return { success: false, message: 'Unmounting is not supported on Windows yet.' };
-    }
-
     const mountPoint = getMountDir(remoteName);
 
     if (!(await isMounted(mountPoint))) {
@@ -244,19 +327,35 @@ ipcMain.handle('unmount_remote', async (event, { remoteName }) => {
     }
 
     try {
-        await execPromise(`fusermount -u "${mountPoint}"`);
+        if (process.platform === 'win32') {
+            // On Windows, kill all rclone.exe processes (since we can't easily identify which one)
+            // This is a bit aggressive but rclone mounts should be the only rclone processes
+            try {
+                await execPromise('taskkill /f /im rclone.exe');
+            } catch (e) {
+                // Ignore if no processes found
+            }
+        } else {
+            await execPromise(`fusermount -u "${mountPoint}"`);
+        }
         // Clean up point
         try { if (fs.existsSync(mountPoint)) fs.rmdirSync(mountPoint); } catch (e) { }
         return { success: true, message: `Successfully unmounted ${remoteName}` };
     } catch (e) {
-        // Fallback to umount
-        try {
-            await execPromise(`umount "${mountPoint}"`);
-            // Clean up point
+        if (process.platform !== 'win32') {
+            // Fallback to umount on Linux
+            try {
+                await execPromise(`umount "${mountPoint}"`);
+                // Clean up point
+                try { if (fs.existsSync(mountPoint)) fs.rmdirSync(mountPoint); } catch (e) { }
+                return { success: true, message: `Successfully unmounted ${remoteName}` };
+            } catch (e2) {
+                return { success: false, message: `Unmount failed: ${e.stderr || e.message}` };
+            }
+        } else {
+            // On Windows, just try to clean up directory
             try { if (fs.existsSync(mountPoint)) fs.rmdirSync(mountPoint); } catch (e) { }
-            return { success: true, message: `Successfully unmounted ${remoteName}` };
-        } catch (e2) {
-            return { success: false, message: `Unmount failed: ${e.stderr || e.message}` };
+            return { success: true, message: `Attempted to unmount ${remoteName}` };
         }
     }
 });
@@ -317,7 +416,7 @@ ipcMain.handle('check_latency', async (event, { remoteName, configPathOpt }) => 
 
 ipcMain.handle('is_rclone_installed', async () => {
     try {
-        await execPromise('rclone --version');
+        await execPromise(`"${getRclonePath()}" --version`);
         return true;
     } catch {
         return false;
@@ -474,7 +573,7 @@ ipcMain.handle('add_remote_with_plugin', async (event, { pluginName, config, con
     const processedConfig = { ...config };
     if (processedConfig.pass) {
         try {
-            const { stdout } = await execPromise(`rclone obscure "${processedConfig.pass}"`);
+            const { stdout } = await execPromise(`"${getRclonePath()}" obscure "${processedConfig.pass}"`);
             processedConfig.pass = stdout.trim();
         } catch (e) {
             throw new Error(`Failed to obscure password: ${e.message}`);
